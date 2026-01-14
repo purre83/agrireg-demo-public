@@ -7,6 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { TillsynDownloadButton } from "@/components/tillsyn-report";
+import { Switch } from "@/components/ui/switch";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Info } from "lucide-react";
+import { useState } from "react";
 
 export default function FarmPage() {
   const params = useParams<{ id: string }>();
@@ -45,6 +49,48 @@ export default function FarmPage() {
   );
   const outnyttjat = farm.potentialSupport - farm.currentSupport;
 
+  // Placeholder-state för valbara checklist-moduler
+  const [enabled, setEnabled] = useState({
+    miljocompliance: true,
+    skyddszoner: true,
+    godsel: true,
+    krav: false,
+    mejeri: false,
+    koldmedia: false,
+    avfall: false,
+    djurmarkning: false,
+  });
+
+  const toggle = (key: keyof typeof enabled) => {
+    setEnabled(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  const groups = [
+    {
+      title: 'Grundmiljö & tillsyn',
+      items: [
+        { key: 'miljocompliance', label: 'Miljöcompliance & tillsynsunderlag' },
+        { key: 'skyddszoner', label: 'Skyddszoner & GAEC' },
+        { key: 'godsel', label: 'Gödseljournaler' },
+      ],
+    },
+    {
+      title: 'Certifiering & specialkontroller',
+      items: [
+        { key: 'krav', label: 'KRAV-kontroller' },
+        { key: 'mejeri', label: 'Mejeri-kontroller' },
+      ],
+    },
+    {
+      title: 'Övriga kontroller',
+      items: [
+        { key: 'koldmedia', label: 'Köldmedia' },
+        { key: 'avfall', label: 'Avfallshantering' },
+        { key: 'djurmarkning', label: 'Djurmarkning' },
+      ],
+    },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
@@ -81,6 +127,7 @@ export default function FarmPage() {
           <TabsTrigger value="overview">Översikt</TabsTrigger>
           <TabsTrigger value="miljo">Miljöplan & tillsyn</TabsTrigger>
           <TabsTrigger value="cap">CAP-optimering</TabsTrigger>
+          <TabsTrigger value="moduler">Moduler & checklistor</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview">
@@ -307,6 +354,51 @@ export default function FarmPage() {
             <p className="mt-2 font-medium">
               Vill du vara rådgivare i första användargruppen?
               Kontakta oss via knappen i toppen.
+            </p>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="moduler">
+          <div className="bg-white rounded-2xl shadow-lg p-8">
+            <div className="flex items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Aktivera checklistor för denna gård</h2>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="ml-3 h-6 w-6 text-gray-400 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-sm p-4 bg-gray-800 text-white rounded-lg">
+                    <p>Välj vilka kontroller som ska ingå i checklistor och tillsynsunderlag. Full version anpassar PDF och påminnelser automatiskt.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+
+            <p className="text-gray-600 mb-8">
+              Aktivera moduler per gård – systemet uppdaterar checklista och PDF-underlag därefter.
+            </p>
+
+            <div className="space-y-10">
+              {groups.map(group => (
+                <div key={group.title}>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">{group.title}</h3>
+                  <div className="space-y-4">
+                    {group.items.map(item => (
+                      <div key={item.key} className="flex items-center justify-between p-5 bg-gray-50 rounded-xl hover:bg-gray-100 transition">
+                        <span className="text-lg text-gray-900 font-medium">{item.label}</span>
+                        <Switch
+                          checked={enabled[item.key as keyof typeof enabled]}
+                          onCheckedChange={() => toggle(item.key as keyof typeof enabled)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <p className="text-sm text-gray-500 mt-8 text-center">
+              (Demo-placeholder – valen sparas lokalt. Full version sparar per gård och uppdaterar automatiskt)
             </p>
           </div>
         </TabsContent>
