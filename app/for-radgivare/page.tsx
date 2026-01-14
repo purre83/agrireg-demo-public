@@ -3,16 +3,15 @@
 import { farms } from "@/src/data/dummyData";
 import FarmsTable from "@/components/FarmsTable";
 import { useState } from 'react';
-import { Checkbox } from "@/components/ui/checkbox"; // Antag att du har shadcn checkbox, annars vanlig input
 
 export default function RadgivarePage() {
   const total = farms.length;
   const green = farms.filter((f) => f.status === "green").length;
   const yellow = farms.filter((f) => f.status === "yellow").length;
   const red = farms.filter((f) => f.status === "red").length;
-  const atRisk = yellow + red;
+  const atRisk = yellow + red; // Gårdar i risk = gul + röd
 
-  // State för valbara checklistor (placeholder)
+  // Placeholder-state för valbara checklistor
   const [selectedChecklists, setSelectedChecklists] = useState<string[]>([
     'miljocompliance', // Default på
   ]);
@@ -45,7 +44,7 @@ export default function RadgivarePage() {
         </p>
       </section>
 
-      {/* Stats-rutor (som i din skärmdump) */}
+      {/* Stats-rutor – exakt som din skärmdump */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
         <div className="bg-white p-6 rounded-lg shadow text-center">
           <p className="text-gray-600 text-sm">Totalt antal gårdar</p>
@@ -69,25 +68,27 @@ export default function RadgivarePage() {
         </div>
       </div>
 
-      {/* NY SEKTION: Valbara checklistor */}
+      {/* Valbara checklistor – placeholder för KRAV etc. */}
       <section className="bg-white p-8 rounded-xl shadow-lg">
         <h2 className="text-2xl font-bold mb-6">Aktivera checklistor (kommande funktion)</h2>
         <p className="text-gray-600 mb-6">
-          Kryssa i vilka kontroller du vill aktivera – t.ex. KRAV, mejeri, köldmedia etc. (per gård eller globalt i full version)
+          Kryssa i vilka kontroller du vill aktivera per gård (t.ex. KRAV, mejeri, köldmedia). Full version anpassar checklistor och tillsynsunderlag automatiskt.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {checklists.map((checklist) => (
             <label key={checklist.id} className="flex items-center space-x-3 cursor-pointer">
-              <Checkbox 
+              <input
+                type="checkbox"
                 checked={selectedChecklists.includes(checklist.id)}
-                onCheckedChange={() => toggleChecklist(checklist.id)}
+                onChange={() => toggleChecklist(checklist.id)}
+                className="w-6 h-6 text-green-600 rounded focus:ring-green-500"
               />
               <span className="text-lg">{checklist.label}</span>
             </label>
           ))}
         </div>
         <p className="text-sm text-gray-500 mt-6">
-          (Placeholder i demon – full version sparar val och anpassar checklistor/tillsynsunderlag)
+          (Placeholder i demon – valen sparas lokalt. Full version sparar per gård/globalt)
         </p>
       </section>
 
