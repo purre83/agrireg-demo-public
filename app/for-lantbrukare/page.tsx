@@ -16,7 +16,7 @@ export default function LantbrukarePage() {
                      exampleFarm.status === 'yellow' ? 'Gul – viss risk' : 
                      'Röd – hög risk';
 
-  const unusedSupport = exampleFarm.unusedSupport || 18400;
+  const unusedSupport = 18400; // Demo-värde för outnyttjat CAP-stöd (+18 400 kr)
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
