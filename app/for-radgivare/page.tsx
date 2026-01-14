@@ -2,27 +2,50 @@
 
 import { farms } from "@/src/data/dummyData";
 import FarmsTable from "@/components/FarmsTable";
+import { useState } from 'react';
+import { Checkbox } from "@/components/ui/checkbox"; // Antag att du har shadcn checkbox, annars vanlig input
 
 export default function RadgivarePage() {
   const total = farms.length;
   const green = farms.filter((f) => f.status === "green").length;
   const yellow = farms.filter((f) => f.status === "yellow").length;
   const red = farms.filter((f) => f.status === "red").length;
-  const atRisk = yellow + red; // Gårdar i risk = gul + röd
+  const atRisk = yellow + red;
+
+  // State för valbara checklistor (placeholder)
+  const [selectedChecklists, setSelectedChecklists] = useState<string[]>([
+    'miljocompliance', // Default på
+  ]);
+
+  const checklists = [
+    { id: 'miljocompliance', label: 'Miljöcompliance & tillsyn (grund)' },
+    { id: 'krav', label: 'KRAV-kontroller' },
+    { id: 'mejeri', label: 'Mejeri-kontroller' },
+    { id: 'koldmedia', label: 'Köldmedia' },
+    { id: 'avfall', label: 'Avfallshantering' },
+    { id: 'djurmarkning', label: 'Djurmarkning' },
+    { id: 'skyddszoner', label: 'Skyddszoner & GAEC' },
+    { id: 'godsel', label: 'Gödseljournaler' },
+  ];
+
+  const toggleChecklist = (id: string) => {
+    setSelectedChecklists(prev => 
+      prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id]
+    );
+  };
 
   return (
     <div className="space-y-8 p-8">
       <section className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">
-          Välkommen till AgriReg
+        <h1 className="text-4xl font-bold tracking-tight text-blue-800">
+          Välkommen till AgriReg – Rådgivarvy
         </h1>
-        <p className="text-gray-600 max-w-2xl">
-          Rådgivarportal för miljöplaner, tillsynsunderlag och CAP-optimering.
-          Spara tid per gård, få kontroll inför tillsyn och synliggör outnyttjat stöd.
+        <p className="text-xl text-gray-600 max-w-3xl">
+          Portföljvy för miljöplaner, tillsynsunderlag och CAP-optimering.
         </p>
       </section>
 
-      {/* Stats-rutor – identiska med din skärmdump */}
+      {/* Stats-rutor (som i din skärmdump) */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
         <div className="bg-white p-6 rounded-lg shadow text-center">
           <p className="text-gray-600 text-sm">Totalt antal gårdar</p>
@@ -46,10 +69,32 @@ export default function RadgivarePage() {
         </div>
       </div>
 
+      {/* NY SEKTION: Valbara checklistor */}
+      <section className="bg-white p-8 rounded-xl shadow-lg">
+        <h2 className="text-2xl font-bold mb-6">Aktivera checklistor (kommande funktion)</h2>
+        <p className="text-gray-600 mb-6">
+          Kryssa i vilka kontroller du vill aktivera – t.ex. KRAV, mejeri, köldmedia etc. (per gård eller globalt i full version)
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {checklists.map((checklist) => (
+            <label key={checklist.id} className="flex items-center space-x-3 cursor-pointer">
+              <Checkbox 
+                checked={selectedChecklists.includes(checklist.id)}
+                onCheckedChange={() => toggleChecklist(checklist.id)}
+              />
+              <span className="text-lg">{checklist.label}</span>
+            </label>
+          ))}
+        </div>
+        <p className="text-sm text-gray-500 mt-6">
+          (Placeholder i demon – full version sparar val och anpassar checklistor/tillsynsunderlag)
+        </p>
+      </section>
+
       <section>
-        <h2 className="text-lg font-semibold mb-2">Dina gårdar</h2>
-        <p className="text-sm text-gray-600 mb-4">
-          Klicka på en rad för att öppna gårdsprofilen med miljöplan &amp; CAP-översikt.
+        <h2 className="text-2xl font-semibold mb-4">Dina gårdar</h2>
+        <p className="text-gray-600 mb-6">
+          Klicka på en rad för att öppna gårdsprofilen.
         </p>
         <FarmsTable />
       </section>
