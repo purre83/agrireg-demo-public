@@ -50,13 +50,23 @@ export default function FarmPage() {
   // Placeholder-state för valbara checklist-moduler
   const [enabled, setEnabled] = useState({
     miljocompliance: true,
-    skyddszoner: true,
-    godsel: true,
     krav: false,
-    mejeri: false,
-    koldmedia: false,
     avfall: false,
+    godsel: true,
+    skyddszoner: true,
+    vaxtskydd: false,
+    kemikalie: false,
+    nitrat: false,
+    mejeri: false,
     djurmarkning: false,
+    djurvalfard: false,
+    haccp: false,
+    salmonella: false,
+    crosscompliance: true,
+    ecoschemes: false,
+    koldmedia: false,
+    vatten: false,
+    brandskydd: false,
   });
 
   const toggle = (key: keyof typeof enabled) => {
@@ -68,23 +78,38 @@ export default function FarmPage() {
       title: 'Grundmiljö & tillsyn',
       items: [
         { key: 'miljocompliance', label: 'Miljöcompliance & tillsynsunderlag' },
-        { key: 'skyddszoner', label: 'Skyddszoner & GAEC' },
+        { key: 'avfall', label: 'Avfallshantering' },
         { key: 'godsel', label: 'Gödseljournaler' },
+        { key: 'skyddszoner', label: 'Skyddszoner & GAEC' },
+        { key: 'vaxtskydd', label: 'Växtskyddsjournal' },
+        { key: 'kemikalie', label: 'Kemikaliehantering' },
+        { key: 'nitrat', label: 'Nitratdirektivet / kvävebalans' },
       ],
     },
     {
-      title: 'Certifiering & specialkontroller',
+      title: 'Djur & livsmedel',
+      items: [
+        { key: 'mejeri', label: 'Mejeri-kontroller' },
+        { key: 'djurmarkning', label: 'Djurmarkning' },
+        { key: 'djurvalfard', label: 'Djurvälfärd & djurskydd' },
+        { key: 'haccp', label: 'Livsmedelssäkerhet (HACCP)' },
+        { key: 'salmonella', label: 'Salmonella' },
+      ],
+    },
+    {
+      title: 'CAP & stöd',
       items: [
         { key: 'krav', label: 'KRAV-kontroller' },
-        { key: 'mejeri', label: 'Mejeri-kontroller' },
+        { key: 'crosscompliance', label: 'Cross-compliance (SMR + GAEC)' },
+        { key: 'ecoschemes', label: 'Eco-schemes' },
       ],
     },
     {
-      title: 'Övriga kontroller',
+      title: 'Teknik & övrigt',
       items: [
-        { key: 'koldmedia', label: 'Köldmedia' },
-        { key: 'avfall', label: 'Avfallshantering' },
-        { key: 'djurmarkning', label: 'Djurmarkning' },
+        { key: 'koldmedia', label: 'Köldmedia (F-gas)' },
+        { key: 'vatten', label: 'Vatten & dricksvatten' },
+        { key: 'brandskydd', label: 'Brandskydd' },
       ],
     },
   ];
