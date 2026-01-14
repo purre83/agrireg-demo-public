@@ -7,9 +7,9 @@ import { StatsCards } from "@/components/StatsCards";
 import FarmsTable from "@/components/FarmsTable";
 import Link from 'next/link';
 import { Upload, FileText } from 'lucide-react';
-import { Suspense } from 'react'; // NY IMPORT
+import { Suspense } from 'react'; // NY IMPORT FÖR SUSPENSE
 
-export const dynamic = 'force-dynamic'; // Fixar prerender-error för useSearchParams
+export const dynamic = 'force-dynamic'; // Behåller för säkerhets skull
 
 export default function DashboardPage() {
   const searchParams = useSearchParams();
@@ -33,7 +33,7 @@ export default function DashboardPage() {
   const unusedSupport = 18400; // Hardcode demo-värde (+18 400 kr outnyttjat CAP-stöd)
 
   return (
-    <Suspense fallback={<div className="p-8 text-center text-xl">Laddar vy...</div>}>
+    <Suspense fallback={<div className="p-8 text-center text-xl font-bold">Laddar vy...</div>}>
       <div className="space-y-8">
         {role === 'bonde' && (
           <div className="bg-green-100 p-8 rounded-xl mb-8 text-center shadow-md">
