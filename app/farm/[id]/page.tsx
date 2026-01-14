@@ -7,8 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { TillsynDownloadButton } from "@/components/tillsyn-report";
-import { Switch } from "@/components/ui/switch";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Info } from "lucide-react";
 import { useState } from "react";
 
@@ -362,16 +360,12 @@ export default function FarmPage() {
           <div className="bg-white rounded-2xl shadow-lg p-8">
             <div className="flex items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Aktivera checklistor för denna gård</h2>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="ml-3 h-6 w-6 text-gray-400 cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-sm p-4 bg-gray-800 text-white rounded-lg">
-                    <p>Välj vilka kontroller som ska ingå i checklistor och tillsynsunderlag. Full version anpassar PDF och påminnelser automatiskt.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <div className="relative group ml-3">
+                <Info className="h-6 w-6 text-gray-400 cursor-help" />
+                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block w-64 p-3 bg-gray-800 text-white text-sm rounded-lg shadow-lg z-10">
+                  Välj vilka kontroller som ska ingå i checklistor och tillsynsunderlag. Full version anpassar PDF och påminnelser automatiskt.
+                </div>
+              </div>
             </div>
 
             <p className="text-gray-600 mb-8">
@@ -386,10 +380,15 @@ export default function FarmPage() {
                     {group.items.map(item => (
                       <div key={item.key} className="flex items-center justify-between p-5 bg-gray-50 rounded-xl hover:bg-gray-100 transition">
                         <span className="text-lg text-gray-900 font-medium">{item.label}</span>
-                        <Switch
-                          checked={enabled[item.key as keyof typeof enabled]}
-                          onCheckedChange={() => toggle(item.key as keyof typeof enabled)}
-                        />
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={enabled[item.key as keyof typeof enabled]}
+                            onChange={() => toggle(item.key as keyof typeof enabled)}
+                            className="sr-only peer"
+                          />
+                          <div className="w-14 h-8 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:start-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-600"></div>
+                        </label>
                       </div>
                     ))}
                   </div>
