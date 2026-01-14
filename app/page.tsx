@@ -7,7 +7,7 @@ import { StatsCards } from "@/components/StatsCards";
 import FarmsTable from "@/components/FarmsTable";
 import Link from 'next/link';
 import { Upload, FileText } from 'lucide-react';
-
+export const dynamic = 'force-dynamic'; // Fixar prerender-error för useSearchParams
 export default function DashboardPage() {
   const searchParams = useSearchParams();
   const role = searchParams.get('role');
