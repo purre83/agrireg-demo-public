@@ -27,7 +27,7 @@ export default function DashboardPage() {
                      exampleFarm.status === 'yellow' ? 'Gul – viss risk' : 
                      'Röd – hög risk';
 
-  const unusedSupport = exampleFarm.unusedSupport || 18400;
+  const unusedSupport = 18400; // Hardcode demo-värde (+18 400 kr outnyttjat CAP-stöd)
 
   return (
     <div className="space-y-8">
