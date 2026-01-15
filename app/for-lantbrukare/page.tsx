@@ -73,6 +73,192 @@ export default function LantbrukarePage() {
           </div>
         </div>
 
+        {/* NY SEKTION: Min gård – Egenkontroll */}
+        <div className="mt-16">
+          <h2 className="text-3xl font-bold text-center mb-8">Min gård – Egenkontroll</h2>
+          <p className="text-center text-gray-600 mb-12 max-w-3xl mx-auto">
+            Snabbkoll på vad som är klart inför tillsyn. Full version med rådgivare ger kvalitetssäkrat underlag.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+            {/* Block A: Dokumentstatus */}
+            <div className="bg-white rounded-xl shadow p-6">
+              <h3 className="text-xl font-semibold mb-4">Dokumentstatus</h3>
+              <ul className="space-y-3">
+                <li className="flex items-center justify-between">
+                  <span>Gödselplan</span>
+                  <span className="text-green-600 font-medium">🟢 Finns</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span>Sprutjournal</span>
+                  <span className="text-green-600 font-medium">🟢 Finns</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span>Växtodlingsplan</span>
+                  <span className="text-green-600 font-medium">🟢 Finns</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span>Stalljournal</span>
+                  <span className="text-yellow-600 font-medium">🟡 Gammal</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span>Markkartering</span>
+                  <span className="text-red-600 font-medium">🔴 Saknas</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span>Kemikalieförteckning</span>
+                  <span className="text-green-600 font-medium">🟢 Finns</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span>Skyddszonskarta</span>
+                  <span className="text-green-600 font-medium">🟢 Finns</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span>Arrendeavtal / blockunderlag</span>
+                  <span className="text-yellow-600 font-medium">🟡 Gammal</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Block B: Miljörisk – snabbkoll */}
+            <div className="bg-white rounded-xl shadow p-6">
+              <h3 className="text-xl font-semibold mb-4">Miljörisk – snabbkoll</h3>
+              <ul className="space-y-3">
+                <li className="flex items-center justify-between">
+                  <span>Gödsel sprids enligt plan</span>
+                  <span className="text-green-600 font-medium">🟢 OK</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span>Inga spridningar nära vattendrag</span>
+                  <span className="text-green-600 font-medium">🟢 OK</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span>Skyddszoner finns och är synliga</span>
+                  <span className="text-green-600 font-medium">🟢 OK</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span>Inga läckage runt gödselbrunn</span>
+                  <span className="text-yellow-600 font-medium">🟡 Risk</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span>Kemikalier förvaras korrekt</span>
+                  <span className="text-green-600 font-medium">🟢 OK</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span>Sprutan är besiktad</span>
+                  <span className="text-red-600 font-medium">🔴 Ej OK</span>
+                </li>
+              </ul>
+              <p className="mt-6 text-center text-lg font-semibold text-green-600">Låg risk</p>
+            </div>
+
+            {/* Block C: Deadline-koll */}
+            <div className="bg-white rounded-xl shadow p-6">
+              <h3 className="text-xl font-semibold mb-4">Deadline-koll</h3>
+              <ul className="space-y-3">
+                <li className="flex items-center justify-between">
+                  <span>Årlig gödselplan uppdaterad</span>
+                  <span className="text-green-600 font-medium">OK</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span>Växtnäringsbalans klar</span>
+                  <span className="text-green-600 font-medium">OK</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span>Sprutjournal uppdaterad</span>
+                  <span className="text-yellow-600 font-medium">Snart</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span>Markkartering inom 8 år</span>
+                  <span className="text-red-600 font-medium">För sent</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span>Skyddszoner fotograferade</span>
+                  <span className="text-green-600 font-medium">OK</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Block D: Fält & skyddszoner (foto-uppladdning placeholder) */}
+            <div className="bg-white rounded-xl shadow p-6">
+              <h3 className="text-xl font-semibold mb-4">Fält & skyddszoner – foton</h3>
+              <ul className="space-y-3">
+                <li className="flex items-center justify-between">
+                  <span>Foton på skyddszoner</span>
+                  <span className="text-green-600 font-medium">🟢 3 st</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span>Foton på gödselplatta</span>
+                  <span className="text-green-600 font-medium">🟢 2 st</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span>Foton på kemikalieförråd</span>
+                  <span className="text-yellow-600 font-medium">🟡 1 st</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span>Foton på känsliga fält</span>
+                  <span className="text-red-600 font-medium">🔴 Saknas</span>
+                </li>
+              </ul>
+              <button className="mt-4 w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700">
+                Ladda upp foto
+              </button>
+            </div>
+
+            {/* Block E: Om kontrollen kommer i morgon */}
+            <div className="bg-white rounded-xl shadow p-6 md:col-span-2">
+              <h3 className="text-xl font-semibold mb-4">Om kontrollen kommer i morgon</h3>
+              <ul className="space-y-3">
+                <li className="flex items-center justify-between">
+                  <span>Jag hittar mina dokument</span>
+                  <span className="text-green-600 font-medium">🟢 Ja</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span>De är uppdaterade</span>
+                  <span className="text-green-600 font-medium">🟢 Ja</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span>Jag kan visa hur jag jobbar</span>
+                  <span className="text-yellow-600 font-medium">🟡 Delvis</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span>Jag kan visa foton</span>
+                  <span className="text-yellow-600 font-medium">🟡 Delvis</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span>Jag kan visa status</span>
+                  <span className="text-green-600 font-medium">🟢 Ja</span>
+                </li>
+              </ul>
+              <p className="mt-6 text-center text-2xl font-bold text-green-600">Redo</p>
+            </div>
+
+            {/* Block F: Min att-göra-lista */}
+            <div className="bg-white rounded-xl shadow p-6 md:col-span-2">
+              <h3 className="text-xl font-semibold mb-4">Min att-göra-lista</h3>
+              <ul className="space-y-3">
+                <li className="flex items-center">
+                  <span className="text-red-600 mr-3">•</span>
+                  <span>Uppdatera markkartering (äldre än 8 år)</span>
+                </li>
+                <li className="flex items-center">
+                  <span className="text-yellow-600 mr-3">•</span>
+                  <span>Ladda upp foto på känsliga fält</span>
+                </li>
+                <li className="flex items-center">
+                  <span className="text-yellow-600 mr-3">•</span>
+                  <span>Uppdatera sprutjournal (snart deadline)</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <p className="text-center text-gray-600 mt-12 text-sm">
+            Egenkontroll – ej kvalitetssäkrat. För färdigt tillsynsunderlag, export och kvalitetssäkring krävs rådgivarläge.
+          </p>
+        </div>
+
         {/* Länk tillbaka */}
         <div className="text-center mt-12">
           <Link href="/" className="text-primary font-semibold underline">
