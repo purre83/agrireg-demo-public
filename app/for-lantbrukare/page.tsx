@@ -251,6 +251,31 @@ export default function LantbrukarePage() {
                 </li>
               </ul>
             </div>
+
+            {/* NY BLOCK: Certifiering & specialkontroller */}
+            <div className="bg-white rounded-xl shadow p-6 md:col-span-2">
+              <h3 className="text-xl font-semibold mb-4">Certifiering & specialkontroller</h3>
+              <p className="text-gray-600 mb-4">
+                Dessa moduler är inte aktiverade för din gård i demon.
+              </p>
+              <ul className="space-y-3">
+                <li className="flex items-center justify-between">
+                  <span>KRAV-kontroller</span>
+                  <span className="text-gray-500">Ej aktiverat</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span>Mejeri-kontroller</span>
+                  <span className="text-gray-500">Ej aktiverat</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span>IP Sigill / Svenskt Sigill</span>
+                  <span className="text-gray-500">Ej aktiverat</span>
+                </li>
+              </ul>
+              <p className="text-center text-gray-600 mt-6 font-medium">
+                Kontakta rådgivare för att aktivera KRAV, mejeri etc. och få full checklista i underlaget.
+              </p>
+            </div>
           </div>
 
           <p className="text-center text-gray-600 mt-12 text-sm">
