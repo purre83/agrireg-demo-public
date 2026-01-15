@@ -92,7 +92,7 @@ export default function RadgivarePage() {
   return (
     <div className="space-y-8 p-8">
       <section className="space-y-2">
-        <h1 className="text-4xl font-bold tracking-tight text-blue-800">
+        <h1 className="text-4xl font-bold tracking-tight text-green-800">
           Välkommen till AgriReg – Rådgivarvy
         </h1>
         <p className="text-xl text-gray-600 max-w-3xl">
