@@ -4,6 +4,7 @@ import { farms } from "@/src/data/dummyData";
 import FarmsTable from "@/components/FarmsTable";
 import { useState } from "react";
 import { Info } from "lucide-react";
+import { ChevronDown } from "lucide-react"; // För accordion-pil
 
 export default function RadgivarePage() {
   const total = farms.length;
@@ -12,7 +13,7 @@ export default function RadgivarePage() {
   const red = farms.filter((f) => f.status === "red").length;
   const atRisk = yellow + red;
 
-  // Placeholder-state för globala checklist-moduler
+  // State för globala checklist-moduler
   const [enabled, setEnabled] = useState({
     miljocompliance: true,
     krav: false,
@@ -36,6 +37,15 @@ export default function RadgivarePage() {
 
   const toggle = (key: keyof typeof enabled) => {
     setEnabled(prev => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  // State för öppna accordion-grupper
+  const [openGroups, setOpenGroups] = useState<string[]>([]);
+
+  const toggleGroup = (title: string) => {
+    setOpenGroups(prev => 
+      prev.includes(title) ? prev.filter(g => g !== title) : [...prev, title]
+    );
   };
 
   const groups = [
@@ -90,7 +100,7 @@ export default function RadgivarePage() {
         </p>
       </section>
 
-      {/* Stats-rutor – exakt som din skärmdump */}
+      {/* Stats-rutor */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
         <div className="bg-white p-6 rounded-lg shadow text-center">
           <p className="text-gray-600 text-sm">Totalt antal gårdar</p>
@@ -114,47 +124,63 @@ export default function RadgivarePage() {
         </div>
       </div>
 
-      {/* Globala checklist-moduler – placeholder */}
-      <div className="bg-white rounded-2xl shadow-lg p-8 mb-12">
-        <div className="flex items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Globala checklist-moduler (standard för nya gårdar)</h2>
+      {/* Kompakt global checklist-sektion med custom accordion */}
+      <div className="bg-white rounded-2xl shadow-lg p-6">
+        <div className="flex items-center mb-4">
+          <h2 className="text-xl font-bold text-gray-900">Globala checklist-moduler (standard för nya gårdar)</h2>
           <div className="relative group ml-3">
-            <Info className="h-6 w-6 text-gray-400 cursor-help" />
+            <Info className="h-5 w-5 text-gray-400 cursor-help" />
             <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block w-64 p-3 bg-gray-800 text-white text-sm rounded-lg shadow-lg z-10">
               Standardval för nya gårdar. Full version tillåter globala inställningar + per-gård-överskridning.
             </div>
           </div>
         </div>
 
-        <p className="text-gray-600 mb-8">
+        <p className="text-gray-600 text-sm mb-6">
           Aktivera moduler som standard för nya gårdar. Per gård kan du överskrida i gårdsprofilen.
         </p>
 
-        <div className="space-y-10">
-          {groups.map(group => (
-            <div key={group.title}>
-              <h3 className="text-lg font-semibold text-gray-800 mb-4">{group.title}</h3>
-              <div className="space-y-4">
-                {group.items.map(item => (
-                  <div key={item.key} className="flex items-center justify-between p-5 bg-gray-50 rounded-xl hover:bg-gray-100 transition">
-                    <span className="text-lg text-gray-900 font-medium">{item.label}</span>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={enabled[item.key as keyof typeof enabled]}
-                        onChange={() => toggle(item.key as keyof typeof enabled)}
-                        className="sr-only peer"
-                      />
-                      <div className="w-14 h-8 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:start-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-600"></div>
-                    </label>
+        <div className="space-y-2">
+          {groups.map(group => {
+            const activeCount = group.items.filter(item => enabled[item.key as keyof typeof enabled]).length;
+            const isOpen = openGroups.includes(group.title);
+
+            return (
+              <div key={group.title} className="border border-gray-200 rounded-lg overflow-hidden">
+                <button
+                  onClick={() => toggleGroup(group.title)}
+                  className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition text-left"
+                >
+                  <div className="flex items-center">
+                    <span className="text-lg font-medium text-gray-900">{group.title}</span>
+                    <span className="ml-3 text-sm text-gray-500">({activeCount}/{group.items.length} aktiverade)</span>
                   </div>
-                ))}
+                  <ChevronDown className={`h-5 w-5 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {isOpen && (
+                  <div className="p-4 bg-white grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {group.items.map(item => (
+                      <div key={item.key} className="flex items-center justify-between">
+                        <span className="text-base text-gray-900">{item.label}</span>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={enabled[item.key as keyof typeof enabled]}
+                            onChange={() => toggle(item.key as keyof typeof enabled)}
+                            className="sr-only peer"
+                          />
+                          <div className="w-12 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
-        <p className="text-sm text-gray-500 mt-8 text-center">
+        <p className="text-xs text-gray-500 mt-6 text-center">
           (Demo-placeholder – valen sparas lokalt. Full version sparar globalt + per gård)
         </p>
       </div>
