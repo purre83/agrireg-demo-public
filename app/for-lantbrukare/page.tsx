@@ -141,7 +141,7 @@ export default function LantbrukarePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Block A: Dokumentstatus – alignment fixad */}
+            {/* Block A: Dokumentstatus – legend tillagd + alignment fixad */}
             <div className="bg-white rounded-xl shadow p-6">
               <h3 className="text-xl font-semibold mb-4">Dokumentstatus</h3>
               <ul className="space-y-3">
@@ -178,9 +178,12 @@ export default function LantbrukarePage() {
                   <span className="text-yellow-600 font-medium text-2xl">🟡</span>
                 </li>
               </ul>
+              <p className="text-sm text-gray-500 mt-4 text-center">
+                🟢 Finns • 🟡 Gammal • 🔴 Saknas
+              </p>
             </div>
 
-            {/* Block B: Miljörisk – snabbkoll – alignment fixad */}
+            {/* Block B: Miljörisk – snabbkoll – legend tillagd + alignment fixad */}
             <div className="bg-white rounded-xl shadow p-6">
               <h3 className="text-xl font-semibold mb-4">Miljörisk – snabbkoll</h3>
               <ul className="space-y-3">
@@ -210,6 +213,9 @@ export default function LantbrukarePage() {
                 </li>
               </ul>
               <p className="mt-6 text-center text-lg font-semibold text-green-600">Låg risk</p>
+              <p className="text-sm text-gray-500 mt-4 text-center">
+                🟢 OK • 🟡 Risk • 🔴 Ej OK
+              </p>
             </div>
 
             {/* Block C: Deadline-koll – alignment fixad */}
@@ -370,9 +376,7 @@ export default function LantbrukarePage() {
                   />
                   <div className="flex gap-4">
                     <button
-                      onClick={() => {
-                        setInviteSent(true);
-                      }}
+                      onClick={() => setInviteSent(true)}
                       className="flex-1 bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700"
                     >
                       Skicka inbjudan
@@ -381,6 +385,7 @@ export default function LantbrukarePage() {
                       onClick={() => {
                         setShowInviteForm(false);
                         setInviteSent(false);
+                        setInviteEmail('');
                       }}
                       className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg font-medium"
                     >
@@ -397,6 +402,7 @@ export default function LantbrukarePage() {
                     onClick={() => {
                       setShowInviteForm(false);
                       setInviteSent(false);
+                      setInviteEmail('');
                     }}
                     className="w-full bg-gray-600 text-white py-3 rounded-lg font-medium hover:bg-gray-700"
                   >
