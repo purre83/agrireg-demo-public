@@ -4,7 +4,7 @@ import { farms } from "@/src/data/dummyData";
 import FarmsTable from "@/components/FarmsTable";
 import { useState } from "react";
 import { Info } from "lucide-react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react"; // För accordion-pil
 
 export default function RadgivarePage() {
   const total = farms.length;
@@ -13,7 +13,7 @@ export default function RadgivarePage() {
   const red = farms.filter((f) => f.status === "red").length;
   const atRisk = yellow + red;
 
-  // State för globala checklist-moduler (placeholder)
+  // State för globala checklist-moduler
   const [enabled, setEnabled] = useState({
     miljocompliance: true,
     krav: false,
@@ -39,6 +39,7 @@ export default function RadgivarePage() {
     setEnabled(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
+  // State för öppna accordion-grupper
   const [openGroups, setOpenGroups] = useState<string[]>([]);
 
   const toggleGroup = (title: string) => {
@@ -91,7 +92,7 @@ export default function RadgivarePage() {
   return (
     <div className="space-y-8 p-8">
       <section className="space-y-2">
-        <h1 className="text-4xl font-bold tracking-tight text-green-800"> {/* Grön header */}
+        <h1 className="text-4xl font-bold tracking-tight text-blue-800">
           Välkommen till AgriReg – Rådgivarvy
         </h1>
         <p className="text-xl text-gray-600 max-w-3xl">
@@ -123,42 +124,66 @@ export default function RadgivarePage() {
         </div>
       </div>
 
-      {/* Exklusiva rådgivarfunktioner – placeholder */}
-      <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-2xl shadow-lg p-8 mb-12 border border-green-200">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Exklusiva funktioner för rådgivare</h2>
-        <p className="text-gray-700 mb-6">
-          Som rådgivare äger du risken och har full kontroll – lås underlag, signera och export till Länsstyrelsen.
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="text-center p-6 bg-white rounded-xl shadow">
-            <p className="text-lg font-medium text-gray-800 mb-2">Låsa tillsynsunderlag</p>
-            <p className="text-sm text-gray-500">Förhindra ändringar efter granskning</p>
-            <button className="mt-4 px-6 py-3 bg-gray-300 text-gray-600 rounded-lg cursor-not-allowed">
-              Kommande funktion
-            </button>
-          </div>
-          <div className="text-center p-6 bg-white rounded-xl shadow">
-            <p className="text-lg font-medium text-gray-800 mb-2">Signera / godkänna</p>
-            <p className="text-sm text-gray-500">Digital signatur för ansvar</p>
-            <button className="mt-4 px-6 py-3 bg-gray-300 text-gray-600 rounded-lg cursor-not-allowed">
-              Kommande funktion
-            </button>
-          </div>
-          <div className="text-center p-6 bg-white rounded-xl shadow">
-            <p className="text-lg font-medium text-gray-800 mb-2">Export till Länsstyrelsen</p>
-            <p className="text-sm text-gray-500">Format för inlämning</p>
-            <button className="mt-4 px-6 py-3 bg-gray-300 text-gray-600 rounded-lg cursor-not-allowed">
-              Kommande funktion
-            </button>
+      {/* Kompakt global checklist-sektion med custom accordion */}
+      <div className="bg-white rounded-2xl shadow-lg p-6">
+        <div className="flex items-center mb-4">
+          <h2 className="text-xl font-bold text-gray-900">Globala checklist-moduler (standard för nya gårdar)</h2>
+          <div className="relative group ml-3">
+            <Info className="h-5 w-5 text-gray-400 cursor-help" />
+            <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 hidden group-hover:block w-64 p-3 bg-gray-800 text-white text-sm rounded-lg shadow-lg z-10">
+              Standardval för nya gårdar. Full version tillåter globala inställningar + per-gård-överskridning.
+            </div>
           </div>
         </div>
-        <p className="text-sm text-gray-500 mt-8 text-center">
-          (Placeholder i demo – aktiveras vid betalning)
+
+        <p className="text-gray-600 text-sm mb-6">
+          Aktivera moduler som standard för nya gårdar. Per gård kan du överskrida i gårdsprofilen.
+        </p>
+
+        <div className="space-y-2">
+          {groups.map(group => {
+            const activeCount = group.items.filter(item => enabled[item.key as keyof typeof enabled]).length;
+            const isOpen = openGroups.includes(group.title);
+
+            return (
+              <div key={group.title} className="border border-gray-200 rounded-lg overflow-hidden">
+                <button
+                  onClick={() => toggleGroup(group.title)}
+                  className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition text-left"
+                >
+                  <div className="flex items-center">
+                    <span className="text-lg font-medium text-gray-900">{group.title}</span>
+                    <span className="ml-3 text-sm text-gray-500">({activeCount}/{group.items.length} aktiverade)</span>
+                  </div>
+                  <ChevronDown className={`h-5 w-5 text-gray-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {isOpen && (
+                  <div className="p-4 bg-white grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {group.items.map(item => (
+                      <div key={item.key} className="flex items-center justify-between">
+                        <span className="text-base text-gray-900">{item.label}</span>
+                        <label className="relative inline-flex items-center cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={enabled[item.key as keyof typeof enabled]}
+                            onChange={() => toggle(item.key as keyof typeof enabled)}
+                            className="sr-only peer"
+                          />
+                          <div className="w-12 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <p className="text-xs text-gray-500 mt-6 text-center">
+          (Demo-placeholder – valen sparas lokalt. Full version sparar globalt + per gård)
         </p>
       </div>
-
-      {/* Globala checklist-moduler (din accordion-kod – kompakt) */}
-      {/* ... din befintliga accordion-sektion här ... */}
 
       <section>
         <h2 className="text-2xl font-semibold mb-4">Dina gårdar</h2>
