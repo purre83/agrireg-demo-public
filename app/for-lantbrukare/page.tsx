@@ -1,7 +1,6 @@
 'use client';
 
 import { farms } from "@/src/data/dummyData";
-// Importera komponenter du redan använder
 import Link from 'next/link';
 import { Upload, FileText } from 'lucide-react';
 
@@ -25,7 +24,7 @@ export default function LantbrukarePage() {
         <div className="bg-green-100 p-8 rounded-xl mb-12 text-center shadow-md">
           <h1 className="text-4xl font-bold mb-4">Välkommen som lantbrukare!</h1>
           <p className="text-xl max-w-3xl mx-auto">
-            Här ser du vy för din egen gård. Testa att ladda upp dokument och generera underlag – allt samlat på ett ställe.
+            Här ser du vy för din egen gård. Testa att ladda upp dokument och generera förhandsrapport – allt samlat på ett ställe.
           </p>
         </div>
 
@@ -56,7 +55,7 @@ export default function LantbrukarePage() {
               </div>
             </div>
 
-            {/* Knappar */}
+            {/* Knappar – "Generera förhandsrapport" för bönder */}
             <div className="flex flex-col sm:flex-row gap-8 justify-center">
               <button className="flex items-center justify-center gap-4 bg-blue-600 text-white px-10 py-6 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg text-xl">
                 <Upload size={32} />
@@ -64,17 +63,17 @@ export default function LantbrukarePage() {
               </button>
               <button className="flex items-center justify-center gap-4 bg-green-600 text-white px-10 py-6 rounded-xl font-bold hover:bg-green-700 transition shadow-lg text-xl">
                 <FileText size={32} />
-                Generera tillsynsunderlag
+                Generera förhandsrapport
               </button>
             </div>
 
             <p className="text-center text-gray-600 mt-8">
-              (Funktionerna är placeholders i demon – full version kommer med riktig uppladdning och generering)
+              (Förhandsrapport i demo – full version: rådgivare låser, signerar och exporterar till Länsstyrelsen)
             </p>
           </div>
         </div>
 
-        {/* Länk tillbaka till huvudsidan */}
+        {/* Länk tillbaka */}
         <div className="text-center mt-12">
           <Link href="/" className="text-primary font-semibold underline">
             Tillbaka till startsidan
