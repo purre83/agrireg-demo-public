@@ -81,7 +81,6 @@ export default function LantbrukarePage() {
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-
             {/* Block A: Dokumentstatus */}
             <div className="bg-white rounded-xl shadow p-6">
               <h3 className="text-xl font-semibold mb-4">Dokumentstatus</h3>
