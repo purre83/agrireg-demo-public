@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import Script from "next/script"; // <-- Ny import
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -26,6 +27,21 @@ export default function RootLayout({
 }) {
   return (
     <html lang="sv">
+      <head>
+        {/* Plausible Analytics – privacy-friendly */}
+        <Script
+          strategy="afterInteractive"
+          src="https://plausible.io/js/pa-IzQjx6KX3qZV--5nNCSsd.js"
+          async
+        />
+        <Script strategy="afterInteractive" id="plausible-init">
+          {`
+            window.plausible = window.plausible || function() { (window.plausible.q = window.plausible.q || []).push(arguments) };
+            window.plausible.init = window.plausible.init || function(i) { window.plausible.o = i || {} };
+            window.plausible.init();
+          `}
+        </Script>
+      </head>
       <body className={inter.className + " bg-gray-50 text-gray-900"}>
         <Header />
         <main className="min-h-screen max-w-7xl mx-auto px-4 py-8">
