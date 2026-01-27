@@ -30,8 +30,10 @@ export default function RootLayout({
       <head>
         {/* Plausible Analytics – privacy-friendly */}
         <Script
-          strategy="beforeInteractive"  // <-- Ändrat hit – laddar tidigt i head
+          strategy="beforeInteractive"
           src="https://plausible.io/js/pa-IzQjx6KX3qZV--5nNCSsd.js"
+          data-domain="demo.agrireg.se"  // <-- Extra för verifiering
+          defer                    // <-- Hjälper crawlers se scriptet
           async
         />
         <Script strategy="beforeInteractive" id="plausible-init">
