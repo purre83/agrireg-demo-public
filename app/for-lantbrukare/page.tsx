@@ -124,7 +124,7 @@ export default function LantbrukarePage() {
     );
   }
 
-  // Vanliga demo-vyn (din befintliga kod)
+  // Vanliga demo-vyn (din fulla originala kod)
   const exampleFarm = farms[0];
 
   const bondStatusColor = exampleFarm.status === 'green' ? 'bg-green-600 text-white' : 
@@ -156,6 +156,7 @@ export default function LantbrukarePage() {
 
         {/* Gård-kort */}
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+          {/* Status-badge högst upp */}
           <div className={`p-4 text-center font-bold text-xl ${bondStatusColor}`}>
             {statusText}
           </div>
@@ -180,6 +181,7 @@ export default function LantbrukarePage() {
               </div>
             </div>
 
+            {/* Knappar – "Generera förhandsrapport" för bönder */}
             <div className="flex flex-col sm:flex-row gap-8 justify-center">
               <button className="flex items-center justify-center gap-4 bg-blue-600 text-white px-10 py-6 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg text-xl">
                 <Upload size={32} />
@@ -197,19 +199,355 @@ export default function LantbrukarePage() {
           </div>
         </div>
 
-        {/* Egenkontroll-sektionen – din befintliga kod här (kopierad från din original) */}
-        {/* ... (allt från din originalkod, inkl modals etc.) ... */}
+        {/* Egenkontroll */}
+        <div className="mt-16">
+          <h2 className="text-3xl font-bold text-center mb-8">Egenkontroll</h2>
+          <p className="text-center text-gray-600 mb-12 max-w-3xl mx-auto">
+            Snabbkoll på vad som är klart inför tillsyn. Full version med rådgivare ger kvalitetssäkrat underlag.
+          </p>
 
+          {/* Certifiering & specialkontroller – paywall högst upp */}
+          <div className="bg-gray-100 rounded-2xl shadow-lg p-8 mb-12 border border-gray-300 relative">
+            <div className="flex items-center mb-6">
+              <Lock className="h-8 w-8 text-gray-500 mr-3" />
+              <h3 className="text-2xl font-bold text-gray-900">Certifiering & specialkontroller</h3>
+              <span className="ml-4 px-4 py-1 bg-red-100 text-red-800 rounded-full text-sm font-medium">Ej aktiverat</span>
+            </div>
+            <p className="text-gray-700 mb-6">
+              Dessa moduler är inte aktiverade för din gård i demon. De kräver rådgivarläge för kvalitetssäkring och full integration i tillsynsunderlag.
+            </p>
+            <ul className="space-y-4 mb-8">
+              <li className="flex items-center justify-between">
+                <span className="text-lg text-gray-900">KRAV-kontroller</span>
+                <span className="text-gray-500 font-medium">Ej aktiverat</span>
+              </li>
+              <li className="flex items-center justify-between">
+                <span className="text-lg text-gray-900">Mejeri-kontroller</span>
+                <span className="text-gray-500 font-medium">Ej aktiverat</span>
+              </li>
+              <li className="flex items-center justify-between">
+                <span className="text-lg text-gray-900">IP Sigill / Svenskt Sigill</span>
+                <span className="text-gray-500 font-medium">Ej aktiverat</span>
+              </li>
+            </ul>
+
+            <div className="flex flex-col md:flex-row gap-6 justify-center">
+              <button
+                onClick={() => setShowInviteForm(true)}
+                className="bg-green-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-green-700 transition shadow-lg text-lg flex items-center justify-center gap-3"
+              >
+                Bjud in min rådgivare
+              </button>
+              <button
+                onClick={() => setShowHelpForm(true)}
+                className="bg-gray-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-gray-700 transition shadow-lg text-lg flex items-center justify-center gap-3"
+              >
+                Jag har ingen rådgivare – hjälp mig
+              </button>
+            </div>
+
+            <button
+              onClick={() => setShowInfoModal(true)}
+              className="mt-6 text-center text-gray-600 underline text-sm"
+            >
+              Vad krävs för att aktivera detta?
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Dokumentstatus */}
+            <div className="bg-white rounded-xl shadow p-6">
+              <h3 className="text-xl font-semibold mb-4">Dokumentstatus</h3>
+              <ul className="space-y-3">
+                <li className="flex items-center justify-between">
+                  <span className="min-w-0 flex-1 pr-4">Gödselplan</span>
+                  <span className="text-green-600 font-medium text-2xl">🟢</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="min-w-0 flex-1 pr-4">Sprutjournal</span>
+                  <span className="text-green-600 font-medium text-2xl">🟢</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="min-w-0 flex-1 pr-4">Växtodlingsplan</span>
+                  <span className="text-green-600 font-medium text-2xl">🟢</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="min-w-0 flex-1 pr-4">Stalljournal</span>
+                  <span className="text-yellow-600 font-medium text-2xl">🟡</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="min-w-0 flex-1 pr-4">Markkartering</span>
+                  <span className="text-red-600 font-medium text-2xl">🔴</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="min-w-0 flex-1 pr-4">Kemikalieförteckning</span>
+                  <span className="text-green-600 font-medium text-2xl">🟢</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="min-w-0 flex-1 pr-4">Skyddszonskarta</span>
+                  <span className="text-green-600 font-medium text-2xl">🟢</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="min-w-0 flex-1 pr-4">Arrendeavtal / blockunderlag</span>
+                  <span className="text-yellow-600 font-medium text-2xl">🟡</span>
+                </li>
+              </ul>
+              <p className="text-sm text-gray-500 mt-4 text-center">
+                🟢 Finns • 🟡 Gammal • 🔴 Saknas
+              </p>
+            </div>
+
+            {/* Miljörisk */}
+            <div className="bg-white rounded-xl shadow p-6">
+              <h3 className="text-xl font-semibold mb-4">Miljörisk – snabbkoll</h3>
+              <ul className="space-y-3">
+                <li className="flex items-center justify-between">
+                  <span className="min-w-0 flex-1 pr-4">Gödsel sprids enligt plan</span>
+                  <span className="text-green-600 font-medium text-2xl">🟢</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="min-w-0 flex-1 pr-4">Inga spridningar nära vattendrag</span>
+                  <span className="text-green-600 font-medium text-2xl">🟢</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="min-w-0 flex-1 pr-4">Skyddszoner finns och är synliga</span>
+                  <span className="text-green-600 font-medium text-2xl">🟢</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="min-w-0 flex-1 pr-4">Inga läckage runt gödselbrunn</span>
+                  <span className="text-yellow-600 font-medium text-2xl">🟡</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="min-w-0 flex-1 pr-4">Kemikalier förvaras korrekt</span>
+                  <span className="text-green-600 font-medium text-2xl">🟢</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="min-w-0 flex-1 pr-4">Sprutan är besiktad</span>
+                  <span className="text-red-600 font-medium text-2xl">🔴</span>
+                </li>
+              </ul>
+              <p className="mt-6 text-center text-lg font-semibold text-green-600">Låg risk</p>
+              <p className="text-sm text-gray-500 mt-4 text-center">
+                🟢 OK • 🟡 Risk • 🔴 Ej OK
+              </p>
+            </div>
+
+            {/* Deadline-koll */}
+            <div className="bg-white rounded-xl shadow p-6">
+              <h3 className="text-xl font-semibold mb-4">Deadline-koll</h3>
+              <ul className="space-y-3">
+                <li className="flex items-center justify-between">
+                  <span className="min-w-0 flex-1 pr-4">Årlig gödselplan uppdaterad</span>
+                  <span className="text-green-600 font-medium">OK</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="min-w-0 flex-1 pr-4">Växtnäringsbalans klar</span>
+                  <span className="text-green-600 font-medium">OK</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="min-w-0 flex-1 pr-4">Sprutjournal uppdaterad</span>
+                  <span className="text-yellow-600 font-medium">Snart</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="min-w-0 flex-1 pr-4">Markkartering inom 8 år</span>
+                  <span className="text-red-600 font-medium">För sent</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="min-w-0 flex-1 pr-4">Skyddszoner fotograferade</span>
+                  <span className="text-green-600 font-medium">OK</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Fält & skyddszoner */}
+            <div className="bg-white rounded-xl shadow p-6">
+              <h3 className="text-xl font-semibold mb-4">Fält & skyddszoner – foton</h3>
+              <ul className="space-y-3">
+                <li className="flex items-center justify-between">
+                  <span className="min-w-0 flex-1 pr-4">Foton på skyddszoner</span>
+                  <span className="text-green-600 font-medium">🟢 3 st</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="min-w-0 flex-1 pr-4">Foton på gödselplatta</span>
+                  <span className="text-green-600 font-medium">🟢 2 st</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="min-w-0 flex-1 pr-4">Foton på kemikalieförråd</span>
+                  <span className="text-yellow-600 font-medium">🟡 1 st</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="min-w-0 flex-1 pr-4">Foton på känsliga fält</span>
+                  <span className="text-red-600 font-medium">🔴 Saknas</span>
+                </li>
+              </ul>
+              <button className="mt-4 w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700">
+                Ladda upp foto
+              </button>
+            </div>
+
+            {/* Om kontrollen kommer */}
+            <div className="bg-white rounded-xl shadow p-6 md:col-span-2">
+              <h3 className="text-xl font-semibold mb-4">Om kontrollen kommer i morgon</h3>
+              <ul className="space-y-3">
+                <li className="flex items-center justify-between">
+                  <span className="min-w-0 flex-1 pr-4">Jag hittar mina dokument</span>
+                  <span className="text-green-600 font-medium">🟢 Ja</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="min-w-0 flex-1 pr-4">De är uppdaterade</span>
+                  <span className="text-green-600 font-medium">🟢 Ja</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="min-w-0 flex-1 pr-4">Jag kan visa hur jag jobbar</span>
+                  <span className="text-yellow-600 font-medium">🟡 Delvis</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="min-w-0 flex-1 pr-4">Jag kan visa foton</span>
+                  <span className="text-yellow-600 font-medium">🟡 Delvis</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="min-w-0 flex-1 pr-4">Jag kan visa status</span>
+                  <span className="text-green-600 font-medium">🟢 Ja</span>
+                </li>
+              </ul>
+              <p className="mt-6 text-center text-2xl font-bold text-green-600">Redo</p>
+            </div>
+
+            {/* Att-göra-lista */}
+            <div className="bg-white rounded-xl shadow p-6 md:col-span-2">
+              <h3 className="text-xl font-semibold mb-4">Min att-göra-lista</h3>
+              <ul className="space-y-3">
+                <li className="flex items-center">
+                  <span className="text-red-600 mr-3">•</span>
+                  <span>Uppdatera markkartering (äldre än 8 år)</span>
+                </li>
+                <li className="flex items-center">
+                  <span className="text-yellow-600 mr-3">•</span>
+                  <span>Ladda upp foto på känsliga fält</span>
+                </li>
+                <li className="flex items-center">
+                  <span className="text-yellow-600 mr-3">•</span>
+                  <span>Uppdatera sprutjournal (snart deadline)</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <p className="text-center text-gray-600 mt-12 text-sm">
+            Egenkontroll – ej kvalitetssäkrat. För färdigt tillsynsunderlag, export och kvalitetssäkring krävs rådgivarläge.
+          </p>
+        </div>
+
+        {/* Länk tillbaka */}
         <div className="text-center mt-12">
           <Link href="/" className="text-primary font-semibold underline">
             Tillbaka till startsidan
           </Link>
         </div>
 
-        {/* Dina modals här – info, invite, help */}
-        {showInfoModal && ( /* din modal-kod */ )}
-        {showInviteForm && ( /* din modal-kod */ )}
-        {showHelpForm && ( /* din modal-kod */ )}
+        {/* Info-modal */}
+        {showInfoModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md">
+              <h3 className="text-2xl font-bold mb-4">Vad krävs för att aktivera certifiering?</h3>
+              <p className="text-gray-700 mb-6">
+                KRAV, mejeri och andra certifieringar kräver rådgivarläge för:
+              </p>
+              <ul className="list-disc list-inside text-gray-700 mb-6 space-y-2">
+                <li>Kvalitetssäkring och spårbarhet</li>
+                <li>Full integration i tillsynsunderlag</li>
+                <li>Signering och export till Länsstyrelsen</li>
+              </ul>
+              <p className="text-gray-700">
+                Kontakta eller bjud in din rådgivare för att aktivera.
+              </p>
+              <button
+                onClick={() => setShowInfoModal(false)}
+                className="mt-6 w-full bg-gray-600 text-white py-3 rounded-lg font-medium hover:bg-gray-700"
+              >
+                Stäng
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Inbjudan-form mock */}
+        {showInviteForm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md">
+              <h3 className="text-2xl font-bold mb-4">Bjud in rådgivare</h3>
+              {!inviteSent ? (
+                <>
+                  <p className="text-gray-700 mb-6">
+                    Ange rådgivarens e-post – vi skickar inbjudan (mock i demo).
+                  </p>
+                  <input
+                    type="email"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    placeholder="radgivare@email.se"
+                    className="w-full p-3 border border-gray-300 rounded-lg mb-4"
+                  />
+                  <div className="flex gap-4">
+                    <button
+                      onClick={() => setInviteSent(true)}
+                      className="flex-1 bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700"
+                    >
+                      Skicka inbjudan
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowInviteForm(false);
+                        setInviteSent(false);
+                        setInviteEmail('');
+                      }}
+                      className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg font-medium"
+                    >
+                      Avbryt
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-center text-green-600 text-xl font-medium mb-6">
+                    Inbjudan skickad till {inviteEmail}! (mock)
+                  </p>
+                  <button
+                    onClick={() => {
+                      setShowInviteForm(false);
+                      setInviteSent(false);
+                      setInviteEmail('');
+                    }}
+                    className="w-full bg-gray-600 text-white py-3 rounded-lg font-medium hover:bg-gray-700"
+                  >
+                    Stäng
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Hjälp-form mock */}
+        {showHelpForm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md">
+              <h3 className="text-2xl font-bold mb-4">Hitta rådgivare</h3>
+              <p className="text-gray-700 mb-6">
+                Vi hjälper dig hitta en AgriReg-rådgivare i ditt område.
+              </p>
+              <p className="text-center text-green-600 text-xl font-medium mb-6">
+                Tack för intresset – vi kontaktar dig snart! (mock)
+              </p>
+              <button
+                onClick={() => setShowHelpForm(false)}
+                className="w-full bg-gray-600 text-white py-3 rounded-lg font-medium hover:bg-gray-700"
+              >
+                Stäng
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
