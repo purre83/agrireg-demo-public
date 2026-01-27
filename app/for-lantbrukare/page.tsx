@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Upload, FileText, Lock, Info } from 'lucide-react';
 import { useState } from 'react';
 
-export const dynamic = 'force-dynamic'; // <-- Fixar prerender-error för useSearchParams
+export const dynamic = 'force-dynamic'; // Fixar prerender-error för useSearchParams
 
 export default function LantbrukarePage() {
   const searchParams = useSearchParams();
@@ -19,7 +19,6 @@ export default function LantbrukarePage() {
     return (
       <div className="min-h-screen bg-gray-50 py-12">
         <div className="max-w-4xl mx-auto px-4">
-          {/* Personlig välkomst */}
           <div className="bg-green-100 p-8 rounded-xl mb-12 text-center shadow-md">
             <h1 className="text-4xl font-bold mb-4">Välkommen till din pilot, Harparboda Gård!</h1>
             <p className="text-xl max-w-3xl mx-auto">
@@ -27,7 +26,6 @@ export default function LantbrukarePage() {
             </p>
           </div>
 
-          {/* Vad ska göras – och när */}
           <div className="bg-white rounded-xl shadow-lg p-8 mb-12">
             <h2 className="text-3xl font-bold text-primary mb-8 text-center">
               Vad ska göras – och när
@@ -67,7 +65,6 @@ export default function LantbrukarePage() {
             </div>
           </div>
 
-          {/* Aktiva checklistor */}
           <h2 className="text-3xl font-bold text-center mb-8">Dina aktiva checklistor</h2>
           <div className="grid md:grid-cols-2 gap-8 mb-12">
             {pilotFarm.activeModules.map((module) => (
@@ -88,7 +85,6 @@ export default function LantbrukarePage() {
             ))}
           </div>
 
-          {/* Låsta moduler */}
           <div className="bg-gray-100 rounded-xl shadow p-8 mb-12 border border-gray-300">
             <div className="flex items-center mb-6 justify-center">
               <Lock className="h-8 w-8 text-gray-500 mr-3" />
@@ -107,7 +103,6 @@ export default function LantbrukarePage() {
             </div>
           </div>
 
-          {/* Disclaimer */}
           <div className="bg-blue-50 rounded-xl p-8 text-center">
             <p className="text-lg font-medium text-blue-900">
               Det här är en pilot – bara för din egen kontroll och lugn.<br />
@@ -126,7 +121,7 @@ export default function LantbrukarePage() {
     );
   }
 
-  // Vanliga demo-vyn (din originala kod – komplett)
+  // Vanliga demo-vyn
   const exampleFarm = farms[0];
 
   const bondStatusColor = exampleFarm.status === 'green' ? 'bg-green-600 text-white' : 
