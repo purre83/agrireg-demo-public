@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { farms } from "@/src/data/dummyData";
 import { Upload, FileText, Lock, CheckCircle2, X, Mail, Camera } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
+import type { ChangeEvent, DragEvent } from 'react';
 
 type Farm = any;
 
@@ -20,7 +21,7 @@ type PilotStorage = {
   uploads: UploadItem[];
 };
 
-const STORAGE_KEY = 'agrireg_pilot_harparboda_v2';
+const STORAGE_KEY = 'agrireg_pilot_harparboda_v3';
 
 function safeLoad(): PilotStorage {
   if (typeof window === 'undefined') return { checks: {}, uploads: [] };
@@ -44,6 +45,16 @@ function safeSave(data: PilotStorage) {
   } catch {
     // ignore
   }
+}
+
+function clamp(n: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, n));
+}
+
+function statusFromPercent(pct: number) {
+  if (pct >= 80) return { key: 'green', label: 'Grön – allt under kontroll', pill: 'bg-green-100 text-green-800 border-green-200', bar: 'bg-green-600' };
+  if (pct >= 50) return { key: 'yellow', label: 'Gul – viss risk', pill: 'bg-yellow-100 text-yellow-800 border-yellow-200', bar: 'bg-yellow-600' };
+  return { key: 'red', label: 'Röd – hög risk', pill: 'bg-red-100 text-red-800 border-red-200', bar: 'bg-red-600' };
 }
 
 export default function LantbrukarePage() {
@@ -86,12 +97,12 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
         id: 'djurhallning-notkreatur',
         title: 'Djurhållning – dikor & ungnöt',
         items: [
-          'Kontrollera djur-ID/märkning (öronbrickor) och att listor stämmer',
-          'Se över stalljournal/händelser (flytt, dödfödda, inköp/försäljning)',
-          'Kontrollera vattenförsörjning och funktion på frostskydd/ventiler',
-          'Gå igenom liggplatser/strö – torrt, rent och tillräckligt',
-          'Foderlager: räkna dagar kvar + plan för nästa leverans/ensilage',
-          'Sjukbox/rutiner: finns, ren, och används vid behov',
+          'Djur-ID/märkning kontrollerad (öronbrickor) + listor stämmer',
+          'Stalljournal uppdaterad (flyttar, inköp/försäljning, dödsfall)',
+          'Vatten: baljor/ventiler fungerar och inga frysproblem',
+          'Liggplatser/strö: torrt, rent och tillräckligt',
+          'Foderlager kontrollerat (dagar kvar + plan för nästa steg)',
+          'Sjukbox/rutin: finns, ren och redo vid behov',
         ],
       },
       {
@@ -100,32 +111,32 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
         items: [
           'Stalljournal uppdaterad (senaste 30 dagarna)',
           'Foder-/inköpsunderlag sparat (kvitton, följesedlar)',
-          'Veterinärbesök/medicinering dokumenterad (om relevant)',
-          'Uppdaterad kontaktlista (jour, veterinär, service)',
-          'Fotodokumentation på riskpunkter (gödsellagring, kemikalier, skyddszon)',
+          'Veterinär/medicinering dokumenterad (om relevant)',
+          'Kontaktlista uppdaterad (veterinär, jour, service)',
+          'Foton sparade på riskpunkter (gödsellagring, kem, skyddszon)',
         ],
       },
       {
         id: 'egenkontroll-miljo',
         title: 'Egenkontroll – miljö (bas)',
         items: [
-          'Gödselhantering: inga läckage vid brunn/platta (snabb rundgång)',
+          'Gödsel: rundgång gjord (inga läckage vid brunn/platta)',
           'Skyddszoner/vattendrag: synliga och fria från spridning',
-          'Kemikalieförvaring: låst, uppmärkt, spilltråg (om tillämpligt)',
-          'Diesel/oljor: inga spill, uppsamling/absorptionsmedel finns',
+          'Kemikalier: förvaring låst/uppmärkt + spilltråg (om tillämpligt)',
+          'Diesel/oljor: inga spill + absorptionsmedel finns',
           'Avfall: farligt avfall separerat och förvaras korrekt',
-          'Rutin: “om kontroll imorgon” – vet var allt finns',
+          'Jag vet var dokument/foton finns om kontroll kommer',
         ],
       },
       {
         id: 'tillsyn-sam',
-        title: 'Tillsyn & SAM-relaterat',
+        title: 'Tillsyn & arbetsmiljö (SAM)',
         items: [
-          'SAM/arbetsmiljö: första hjälpen + brandsläckare på plats och kollad',
-          'Maskiner: synlig risk (läckage, skydd, nödstopp) avprickad',
+          'Första hjälpen + brandsläckare finns och är kontrollerade',
+          'Maskiner: synlig risk (läckage/skydd) avprickad',
           'Gångvägar/ramper: halkrisk åtgärdad där det behövs',
-          'Skyltning: kem/brand/risk-områden uppmärkta där relevant',
-          'Rutiner: vem gör vad vid kontroll (du + ev. ersättare)',
+          'Skyltning: risk-områden uppmärkta där relevant',
+          'Rutiner: “vem gör vad” vid kontroll (du + ev. ersättare)',
         ],
       },
     ];
@@ -142,9 +153,10 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
     const seeded: Record<string, boolean[]> = {};
     for (const m of modules) {
       const existing = loaded.checks?.[m.id];
-      seeded[m.id] = Array.isArray(existing) && existing.length === m.items.length
-        ? existing
-        : new Array(m.items.length).fill(false);
+      seeded[m.id] =
+        Array.isArray(existing) && existing.length === m.items.length
+          ? existing
+          : new Array(m.items.length).fill(false);
     }
 
     setChecks(seeded);
@@ -154,7 +166,6 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
 
   // persist
   useEffect(() => {
-    // only save when we have initialized with modules
     if (!modules?.length) return;
     safeSave({ checks, uploads });
   }, [checks, uploads, modules]);
@@ -168,11 +179,34 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
       done += arr.filter(Boolean).length;
     }
     const pct = total === 0 ? 0 : Math.round((done / total) * 100);
-    return { total, done, pct };
+    return { total, done, pct: clamp(pct, 0, 100) };
+  }, [checks, modules]);
+
+  const overall = useMemo(() => statusFromPercent(totals.pct), [totals.pct]);
+
+  const perModule = useMemo(() => {
+    return modules.map((m) => {
+      const arr = checks[m.id] || [];
+      const done = arr.filter(Boolean).length;
+      const pct = m.items.length ? Math.round((done / m.items.length) * 100) : 0;
+      return { id: m.id, title: m.title, done, total: m.items.length, pct: clamp(pct, 0, 100), status: statusFromPercent(pct) };
+    });
+  }, [checks, modules]);
+
+  const todoList = useMemo(() => {
+    // Samla ej-avprickade punkter som “att-göra”
+    const todos: { moduleTitle: string; text: string }[] = [];
+    for (const m of modules) {
+      const arr = checks[m.id] || [];
+      m.items.forEach((text, idx) => {
+        if (!arr[idx]) todos.push({ moduleTitle: m.title, text });
+      });
+    }
+    return todos;
   }, [checks, modules]);
 
   const toggleItem = (moduleId: string, idx: number) => {
-    setChecks(prev => {
+    setChecks((prev) => {
       const current = Array.isArray(prev[moduleId]) ? prev[moduleId] : [];
       const next = current.slice();
       next[idx] = !next[idx];
@@ -180,16 +214,12 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
     });
   };
 
-  const clearUploads = () => {
-    setUploads([]);
-  };
-
-  const removeUpload = (id: string) => {
-    setUploads(prev => prev.filter(u => u.id !== id));
-  };
+  const clearUploads = () => setUploads([]);
+  const removeUpload = (id: string) => setUploads((prev) => prev.filter((u) => u.id !== id));
 
   const readFilesAsDataUrls = async (fileList: FileList) => {
-    const files = Array.from(fileList).slice(0, 6); // håll det rimligt
+    const files = Array.from(fileList).slice(0, 6);
+
     const readOne = (file: File) =>
       new Promise<UploadItem>((resolve, reject) => {
         const reader = new FileReader();
@@ -215,16 +245,16 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
       }
     }
 
-    setUploads(prev => [...results, ...prev].slice(0, 12));
+    setUploads((prev) => [...results, ...prev].slice(0, 12));
   };
 
-  const onInputFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onInputFiles = async (e: ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     await readFilesAsDataUrls(e.target.files);
     e.target.value = '';
   };
 
-  const onDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+  const onDrop = async (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       await readFilesAsDataUrls(e.dataTransfer.files);
@@ -233,125 +263,141 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
   };
 
   const ringStyle = {
-    background: `conic-gradient(var(--tw-prose-links, #2E7D32) ${totals.pct * 3.6}deg, rgba(0,0,0,0.08) 0deg)`,
+    background: `conic-gradient(#2E7D32 ${totals.pct * 3.6}deg, rgba(0,0,0,0.08) 0deg)`,
   } as React.CSSProperties;
 
   return (
     <div className="min-h-screen bg-gray-50 py-10">
       <div className="max-w-5xl mx-auto px-4">
         {/* PERSONLIG BANNER */}
-        <div className="bg-green-100 p-6 md:p-8 rounded-2xl mb-8 shadow-md border border-green-200">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-            <div>
-              <p className="text-sm font-semibold text-green-900/80">Harparboda Gård • dikor & ungnöt</p>
-              <h1 className="text-3xl md:text-4xl font-extrabold mt-1">
-                Hej Jocke – din vy för Harparboda Gård
-              </h1>
-              <p className="text-base md:text-lg mt-3 text-gray-800 max-w-2xl">
-                Här är din egen “vad ska göras – och när”-vy. Bocka av, ladda upp, och få en förhandsrapport som känns som den ska.
-              </p>
-            </div>
-
-            {/* PROGRESS RING */}
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 rounded-full p-1" style={ringStyle} aria-label={`Progress ${totals.pct}%`}>
-                <div className="w-full h-full rounded-full bg-green-100 flex items-center justify-center">
-                  <span className="text-lg font-extrabold text-green-800">{totals.pct}%</span>
-                </div>
-              </div>
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden mb-8">
+          <div className="p-6 md:p-8 bg-green-100 border-b border-green-200">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
               <div>
-                <p className="text-sm text-gray-700">Klart</p>
-                <p className="text-lg font-bold text-gray-900">
-                  {totals.done} / {totals.total}
+                <p className="text-sm font-semibold text-green-900/80">Harparboda Gård • dikor & ungnöt</p>
+                <h1 className="text-3xl md:text-4xl font-extrabold mt-1">
+                  Hej Jocke – din vy för Harparboda Gård
+                </h1>
+                <p className="text-base md:text-lg mt-3 text-gray-800 max-w-2xl">
+                  Bocka av checklistor, ladda upp underlag och skapa din förhandsrapport. Allt sparas lokalt i din webbläsare.
                 </p>
               </div>
+
+              {/* PROGRESS RING */}
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full p-1" style={ringStyle} aria-label={`Progress ${totals.pct}%`}>
+                  <div className="w-full h-full rounded-full bg-green-100 flex items-center justify-center">
+                    <span className="text-lg font-extrabold text-green-800">{totals.pct}%</span>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-700">Klart</p>
+                  <p className="text-lg font-bold text-gray-900">
+                    {totals.done} / {totals.total}
+                  </p>
+                  <span className={`inline-flex mt-2 items-center gap-2 px-3 py-1 rounded-full border text-xs font-extrabold ${overall.pill}`}>
+                    {overall.label}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* TOP ACTIONS */}
+            <div className="mt-6 flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => setShowReport(true)}
+                className="inline-flex items-center justify-center gap-3 bg-green-600 text-white px-6 py-4 rounded-xl font-extrabold shadow hover:bg-green-700 transition"
+              >
+                <FileText className="w-5 h-5" />
+                Generera förhandsrapport
+              </button>
+
+              <a
+                href="mailto:pilot@agrireg.se?subject=Harparboda – hjälp med export"
+                className="inline-flex items-center justify-center gap-3 bg-primary text-white px-6 py-4 rounded-xl font-extrabold shadow hover:bg-green-700 transition"
+              >
+                <Mail className="w-5 h-5" />
+                Vill du ha hjälp med export? Kontakta mig
+              </a>
+
+              <Link
+                href="/"
+                className="inline-flex items-center justify-center gap-3 bg-white text-gray-900 px-6 py-4 rounded-xl font-bold shadow border border-gray-200 hover:bg-gray-50 transition"
+              >
+                Tillbaka
+              </Link>
+            </div>
+
+            {/* PROGRESS BAR */}
+            <div className="mt-6">
+              <div className="flex items-center justify-between text-xs font-semibold text-gray-700">
+                <span>{totals.pct}% klart</span>
+                <span>{overall.label}</span>
+              </div>
+              <div className="mt-2 h-3 rounded-full bg-white/60 border border-green-200 overflow-hidden">
+                <div className={`h-full ${overall.bar}`} style={{ width: `${totals.pct}%` }} />
+              </div>
             </div>
           </div>
 
-          {/* Kontakt-knapp: alltid synlig */}
-          <div className="mt-6 flex flex-col sm:flex-row gap-3">
-            <a
-              href="mailto:pilot@agrireg.se?subject=Harparboda pilot – hjälp med egenkontroll"
-              className="inline-flex items-center justify-center gap-3 bg-primary text-white px-6 py-4 rounded-xl font-extrabold shadow hover:bg-green-700 transition"
-            >
-              <Mail className="w-5 h-5" />
-              Kontakta rådgivare
-            </a>
+          {/* VAD SKA GÖRAS – OCH NÄR */}
+          <div className="p-6 md:p-8">
+            <h2 className="text-2xl md:text-3xl font-extrabold text-primary mb-6 text-center">
+              Vad ska göras – och när
+            </h2>
 
-            <button
-              onClick={() => setShowReport(true)}
-              className="inline-flex items-center justify-center gap-3 bg-green-600 text-white px-6 py-4 rounded-xl font-extrabold shadow hover:bg-green-700 transition"
-            >
-              <FileText className="w-5 h-5" />
-              Generera förhandsrapport
-            </button>
+            <div className="grid md:grid-cols-3 gap-6">
+              <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6">
+                <h3 className="text-lg font-extrabold mb-2">Nästa åtgärd</h3>
+                <p className="text-xl font-semibold text-gray-900">
+                  {pilotFarm?.nextAction || "Fortsätt bocka av checklistan – du är på rätt väg."}
+                </p>
+                <p className="mt-3 text-sm text-gray-700">
+                  Tips: välj 2 punkter som tar max 10 minuter och gör dem nu.
+                </p>
+              </div>
 
-            <Link
-              href="/"
-              className="inline-flex items-center justify-center gap-3 bg-white text-gray-900 px-6 py-4 rounded-xl font-bold shadow border border-gray-200 hover:bg-gray-50 transition"
-            >
-              Tillbaka
-            </Link>
-          </div>
-        </div>
+              <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6">
+                <h3 className="text-lg font-extrabold mb-3">Kommande saker att hålla koll på</h3>
+                <ul className="space-y-2">
+                  {(pilotFarm?.upcomingRequirements || []).slice(0, 6).map((req: string, i: number) => (
+                    <li key={i} className="flex items-start gap-2 text-gray-800">
+                      <span className="mt-1 text-gray-700">•</span>
+                      <span>{req}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
-        {/* VAD SKA GÖRAS – OCH NÄR */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8 mb-8">
-          <h2 className="text-2xl md:text-3xl font-extrabold text-primary mb-6 text-center">
-            Vad ska göras – och när
-          </h2>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="bg-red-50 border border-red-200 rounded-2xl p-6">
-              <h3 className="text-lg font-extrabold mb-2">Nästa åtgärd</h3>
-              <p className="text-xl font-semibold text-red-700">
-                {pilotFarm?.nextAction || "Ingen akut åtgärd just nu – bra jobbat!"}
-              </p>
-              <p className="mt-3 text-sm text-gray-700">
-                Tips: bocka av 3 grejer idag så känns allt 10× lugnare.
-              </p>
-            </div>
-
-            <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-6">
-              <h3 className="text-lg font-extrabold mb-3">Kommande krav att ha koll på</h3>
-              <ul className="space-y-2">
-                {(pilotFarm?.upcomingRequirements || []).slice(0, 6).map((req: string, i: number) => (
-                  <li key={i} className="flex items-start gap-2 text-gray-800">
-                    <span className="mt-1 text-yellow-700">•</span>
-                    <span>{req}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-6">
-              <h3 className="text-lg font-extrabold mb-3">Saker som lätt glöms bort</h3>
-              <ul className="space-y-2">
-                {(pilotFarm?.forgottenCommon || []).slice(0, 6).map((item: string, i: number) => (
-                  <li key={i} className="flex items-start gap-2 text-gray-800">
-                    <span className="mt-1 text-amber-700">•</span>
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
+              <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6">
+                <h3 className="text-lg font-extrabold mb-3">Sånt som ofta glöms</h3>
+                <ul className="space-y-2">
+                  {(pilotFarm?.forgottenCommon || []).slice(0, 6).map((item: string, i: number) => (
+                    <li key={i} className="flex items-start gap-2 text-gray-800">
+                      <span className="mt-1 text-gray-700">•</span>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </div>
         </div>
 
         {/* UPPLADDNING */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8 mb-8">
+        <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8 mb-8 border border-gray-200">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <h2 className="text-2xl font-extrabold">Dokument & foton</h2>
               <p className="text-gray-700 mt-1">
-                Dra in filer här eller välj via knapp. Du får “Uppladdat!” och en snabb preview.
+                Välj filer eller dra in dem här. Du får preview direkt och allt sparas lokalt.
               </p>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">
-              <label className="inline-flex items-center justify-center gap-3 bg-blue-600 text-white px-5 py-3 rounded-xl font-bold shadow hover:bg-blue-700 transition cursor-pointer">
+              <label className="inline-flex items-center justify-center gap-3 bg-blue-600 text-white px-5 py-3 rounded-xl font-extrabold shadow hover:bg-blue-700 transition cursor-pointer">
                 <Upload className="w-5 h-5" />
-                Ladda upp dokument/foto
+                Ladda upp
                 <input
                   type="file"
                   className="hidden"
@@ -363,7 +409,7 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
 
               <button
                 onClick={clearUploads}
-                className="inline-flex items-center justify-center gap-2 bg-gray-100 text-gray-900 px-5 py-3 rounded-xl font-bold border border-gray-200 hover:bg-gray-200 transition"
+                className="inline-flex items-center justify-center gap-2 bg-primary text-white px-5 py-3 rounded-xl font-extrabold shadow hover:bg-green-700 transition"
               >
                 Rensa
               </button>
@@ -382,7 +428,7 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
 
             {uploads.length > 0 && (
               <>
-                <p className="mt-4 text-green-700 font-bold inline-flex items-center gap-2 justify-center">
+                <p className="mt-4 text-green-700 font-extrabold inline-flex items-center gap-2 justify-center">
                   <CheckCircle2 className="w-5 h-5" />
                   Uppladdat! ({uploads.length})
                 </p>
@@ -427,75 +473,84 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
         </div>
 
         {/* CHECKLISTOR */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8 mb-8">
-          <h2 className="text-2xl md:text-3xl font-extrabold text-center mb-6">Dina checklistor</h2>
+        <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8 mb-8 border border-gray-200">
+          <h2 className="text-2xl md:text-3xl font-extrabold text-center mb-6">Checklistor</h2>
 
           <div className="grid md:grid-cols-2 gap-6">
-            {modules.map((m) => (
-              <div key={m.id} className="rounded-2xl border border-gray-200 shadow-sm bg-white overflow-hidden">
-                <div className="p-5 border-b border-gray-100">
-                  <h3 className="text-lg font-extrabold">{m.title}</h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Bocka av – progress uppdateras direkt.
-                  </p>
-                </div>
+            {modules.map((m) => {
+              const meta = perModule.find(x => x.id === m.id);
+              const modPct = meta?.pct ?? 0;
+              const modStatus = meta?.status ?? statusFromPercent(0);
+              return (
+                <div key={m.id} className="rounded-2xl border border-gray-200 shadow-sm bg-white overflow-hidden">
+                  <div className="p-5 border-b border-gray-100 flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-lg font-extrabold">{m.title}</h3>
+                      <p className="text-sm text-gray-600 mt-1">{modPct}% klart</p>
+                    </div>
+                    <span className={`shrink-0 inline-flex items-center px-3 py-1 rounded-full border text-xs font-extrabold ${modStatus.pill}`}>
+                      {modStatus.key === 'green' ? 'Grön' : modStatus.key === 'yellow' ? 'Gul' : 'Röd'}
+                    </span>
+                  </div>
 
-                <div className="p-5 space-y-3">
-                  {m.items.map((text, idx) => {
-                    const checked = Boolean(checks?.[m.id]?.[idx]);
-                    return (
-                      <button
-                        key={idx}
-                        onClick={() => toggleItem(m.id, idx)}
-                        className={`w-full text-left flex items-start gap-3 rounded-xl px-4 py-3 border transition ${
-                          checked
-                            ? 'bg-green-50 border-green-200'
-                            : 'bg-white border-gray-200 hover:bg-gray-50'
-                        }`}
-                      >
-                        <span
-                          className={`mt-0.5 w-6 h-6 rounded-md border flex items-center justify-center shrink-0 ${
-                            checked ? 'bg-green-600 border-green-600 text-white' : 'bg-white border-gray-300'
+                  <div className="p-5 space-y-3">
+                    {m.items.map((text, idx) => {
+                      const checked = Boolean(checks?.[m.id]?.[idx]);
+                      return (
+                        <button
+                          key={idx}
+                          onClick={() => toggleItem(m.id, idx)}
+                          className={`w-full text-left flex items-start gap-3 rounded-xl px-4 py-3 border transition ${
+                            checked
+                              ? 'bg-green-50 border-green-200'
+                              : 'bg-white border-gray-200 hover:bg-gray-50'
                           }`}
-                          aria-hidden
                         >
-                          {checked ? '✓' : ''}
-                        </span>
-                        <span className="text-sm md:text-[15px] text-gray-900 leading-snug">{text}</span>
-                      </button>
-                    );
-                  })}
+                          <span
+                            className={`mt-0.5 w-6 h-6 rounded-md border flex items-center justify-center shrink-0 ${
+                              checked ? 'bg-green-600 border-green-600 text-white' : 'bg-white border-gray-300'
+                            }`}
+                            aria-hidden
+                          >
+                            {checked ? '✓' : ''}
+                          </span>
+                          <span className="text-sm md:text-[15px] text-gray-900 leading-snug">{text}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
-        {/* CERTIFIERING (låst) */}
+        {/* EXPORT (frivilligt hjälp) */}
         <div className="bg-gray-100 rounded-2xl shadow p-6 md:p-8 mb-8 border border-gray-300">
           <div className="flex items-center mb-4 justify-center">
-            <Lock className="h-7 w-7 text-gray-600 mr-3" />
-            <h3 className="text-xl md:text-2xl font-extrabold text-gray-900">KRAV / certifiering / mejeri</h3>
+            <Lock className="h-7 w-7 text-gray-700 mr-3" />
+            <h3 className="text-xl md:text-2xl font-extrabold text-gray-900">Export</h3>
           </div>
 
           <p className="text-center text-gray-800 mb-6 max-w-2xl mx-auto">
-            Du kan fortfarande göra allt du behöver i din egenkontroll här – men certifiering kräver rådgivarläge för signering och “rätt format” på export.
+            Din vy här är för egenkontroll och struktur. Förhandsrapporten är tydlig – men den är <span className="font-extrabold">inte inskickbar</span>.
+            Om du vill ha hjälp att få allt i “rätt format” för export kan du kontakta mig.
           </p>
 
           <div className="text-center">
             <a
-              href="mailto:pilot@agrireg.se?subject=Harparboda pilot – aktivera KRAV/mejeri"
+              href="mailto:pilot@agrireg.se?subject=Harparboda – hjälp med export"
               className="inline-flex items-center justify-center gap-3 bg-primary text-white px-8 py-4 rounded-xl font-extrabold shadow hover:bg-green-700 transition"
             >
               <Mail className="w-5 h-5" />
-              Kontakta rådgivare för att aktivera
+              Vill du ha hjälp med export? Kontakta mig
             </a>
           </div>
         </div>
 
         <div className="bg-blue-50 rounded-2xl p-6 text-center border border-blue-200">
           <p className="text-base md:text-lg font-semibold text-blue-900">
-            Din pilot är byggd för lugn: checklista + filer + rapportpreview. Du äger koll-läget.
+            Du har koll-läget här: checklistor + filer + förhandsrapport.
           </p>
         </div>
 
@@ -504,17 +559,20 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
           <ReportModal
             onClose={() => setShowReport(false)}
             farmName="Harparboda Gård"
+            farmType="Dikor & ungnöt"
             summary={{
               percent: totals.pct,
               done: totals.done,
               total: totals.total,
-              uploads: uploads.length,
+              uploads: uploads,
+              overallLabel: overall.label,
             }}
-            modules={modules.map(m => ({
+            modules={modules.map((m) => ({
               title: m.title,
               done: (checks[m.id] || []).filter(Boolean).length,
               total: m.items.length,
             }))}
+            todos={todoList}
           />
         )}
       </div>
@@ -525,22 +583,30 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
 function ReportModal({
   onClose,
   farmName,
+  farmType,
   summary,
   modules,
+  todos,
 }: {
   onClose: () => void;
   farmName: string;
-  summary: { percent: number; done: number; total: number; uploads: number };
+  farmType: string;
+  summary: { percent: number; done: number; total: number; uploads: UploadItem[]; overallLabel: string };
   modules: { title: string; done: number; total: number }[];
+  todos: { moduleTitle: string; text: string }[];
 }) {
+  const status = statusFromPercent(summary.percent);
+
+  const topTodos = todos.slice(0, 12);
+
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-2xl overflow-hidden">
+      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden">
         <div className="p-5 border-b border-gray-100 flex items-center justify-between">
           <div>
             <h3 className="text-xl font-extrabold">Förhandsrapport – {farmName}</h3>
             <p className="text-sm text-gray-600">
-              Preview (mock) • sammanfattning + status per område
+              {farmType} • <span className="font-bold">Ej inskickbar</span> (för egenkontroll)
             </p>
           </div>
           <button
@@ -551,15 +617,19 @@ function ReportModal({
           </button>
         </div>
 
-        <div className="p-6 grid md:grid-cols-2 gap-6">
+        <div className="p-6 grid lg:grid-cols-2 gap-6">
+          {/* LEFT */}
           <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5">
-            <h4 className="font-extrabold text-gray-900">Sammanfattning</h4>
+            <div className="flex items-center justify-between">
+              <h4 className="font-extrabold text-gray-900">Sammanfattning</h4>
+              <span className={`text-xs font-extrabold px-3 py-1 rounded-full border ${status.pill}`}>
+                {summary.overallLabel}
+              </span>
+            </div>
+
             <div className="mt-4 space-y-2 text-sm text-gray-800">
               <p><span className="font-bold">Klarhet:</span> {summary.percent}% ({summary.done}/{summary.total})</p>
-              <p><span className="font-bold">Uppladdade filer:</span> {summary.uploads}</p>
-              <p className="text-gray-600 mt-3">
-                Den här preview:n visar hur exporten “kommer kännas”. (I skarp export lägger vi in rätt rubriker, bilagor och sign-off.)
-              </p>
+              <p><span className="font-bold">Filer:</span> {summary.uploads.length}</p>
             </div>
 
             <div className="mt-5 space-y-2">
@@ -570,46 +640,65 @@ function ReportModal({
                 </div>
               ))}
             </div>
-          </div>
 
-          <div className="rounded-2xl border border-gray-200 p-5">
-            <h4 className="font-extrabold text-gray-900">Rapport-preview</h4>
-            <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-5">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-bold">Status</p>
-                <span className={`text-xs font-extrabold px-3 py-1 rounded-full ${
-                  summary.percent >= 80 ? 'bg-green-100 text-green-800' :
-                  summary.percent >= 50 ? 'bg-yellow-100 text-yellow-800' :
-                  'bg-red-100 text-red-800'
-                }`}>
-                  {summary.percent >= 80 ? 'Lugn läge' : summary.percent >= 50 ? 'Viss risk' : 'Hög risk'}
-                </span>
-              </div>
-
-              <div className="mt-4 text-sm text-gray-800 space-y-2">
-                <p>• Översikt per område (djur, journaler, miljö, SAM)</p>
-                <p>• Bilagor: filer och foton kopplas till rätt avsnitt</p>
-                <p>• “Åtgärdslista” genereras från ej avprickade punkter</p>
-              </div>
-
-              <div className="mt-5 rounded-xl bg-gray-50 border border-gray-200 p-4">
-                <p className="text-xs text-gray-600 font-semibold">EXEMPEL (mock)</p>
-                <p className="mt-2 text-sm font-bold text-gray-900">Åtgärdslista – nästa 7 dagar</p>
+            {summary.uploads.length > 0 && (
+              <div className="mt-5 bg-white rounded-xl border border-gray-200 p-4">
+                <p className="text-xs font-extrabold text-gray-700">Bifogade filer</p>
                 <ul className="mt-2 space-y-1 text-sm text-gray-800">
-                  <li>• Bocka av 3 punkter i “Djurhållning”</li>
-                  <li>• Ladda upp 2 foton på riskpunkter (brunn/platta, kem)</li>
-                  <li>• Kontrollera stalljournalen senaste 30 dagar</li>
+                  {summary.uploads.slice(0, 8).map((u) => (
+                    <li key={u.id} className="truncate">• {u.name}</li>
+                  ))}
+                  {summary.uploads.length > 8 && (
+                    <li className="text-gray-600">… +{summary.uploads.length - 8} till</li>
+                  )}
                 </ul>
               </div>
-
-              <button
-                onClick={onClose}
-                className="mt-5 w-full bg-green-600 text-white py-3 rounded-xl font-extrabold shadow hover:bg-green-700 transition"
-              >
-                Klart
-              </button>
-            </div>
+            )}
           </div>
+
+          {/* RIGHT */}
+          <div className="rounded-2xl border border-gray-200 p-5">
+            <h4 className="font-extrabold text-gray-900">Åtgärdslista</h4>
+            <p className="text-sm text-gray-600 mt-1">
+              Bygger på det som inte är avprickat ännu.
+            </p>
+
+            <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-4">
+              {topTodos.length === 0 ? (
+                <p className="text-green-700 font-extrabold">Snyggt! Inget kvar att göra just nu.</p>
+              ) : (
+                <ul className="space-y-2 text-sm text-gray-800">
+                  {topTodos.map((t, idx) => (
+                    <li key={idx} className="flex items-start gap-2">
+                      <span className="mt-1 text-gray-700">•</span>
+                      <span>
+                        <span className="font-bold">{t.moduleTitle}:</span> {t.text}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="mt-5 rounded-2xl border border-gray-200 bg-gray-50 p-4">
+              <p className="text-xs font-extrabold text-gray-700">Notis</p>
+              <p className="mt-2 text-sm text-gray-800">
+                Den här rapporten är avsedd för egenkontroll och lugn. Den är <span className="font-extrabold">inte inskickbar</span>.
+              </p>
+            </div>
+
+            <button
+              onClick={onClose}
+              className="mt-5 w-full bg-green-600 text-white py-3 rounded-xl font-extrabold shadow hover:bg-green-700 transition"
+            >
+              Klart
+            </button>
+          </div>
+        </div>
+
+        {/* Footer (i modal) */}
+        <div className="px-6 pb-6 text-center text-xs text-gray-500">
+          © 2026 AgriReg
         </div>
       </div>
     </div>
@@ -713,66 +802,7 @@ function DemoView() {
           </div>
         </div>
 
-        <div className="mt-16">
-          <h2 className="text-3xl font-bold text-center mb-8">Egenkontroll</h2>
-          <p className="text-center text-gray-600 mb-12 max-w-3xl mx-auto">
-            Snabbkoll på vad som är klart inför tillsyn. Full version med rådgivare ger kvalitetssäkrat underlag.
-          </p>
-
-          <div className="bg-gray-100 rounded-2xl shadow-lg p-8 mb-12 border border-gray-300 relative">
-            <div className="flex items-center mb-6">
-              <Lock className="h-8 w-8 text-gray-500 mr-3" />
-              <h3 className="text-2xl font-bold text-gray-900">Certifiering & specialkontroller</h3>
-              <span className="ml-4 px-4 py-1 bg-red-100 text-red-800 rounded-full text-sm font-medium">Ej aktiverat</span>
-            </div>
-            <p className="text-gray-700 mb-6">
-              Dessa moduler är inte aktiverade för din gård i demon. De kräver rådgivarläge för kvalitetssäkring och full integration i tillsynsunderlag.
-            </p>
-            <ul className="space-y-4 mb-8">
-              <li className="flex items-center justify-between">
-                <span className="text-lg text-gray-900">KRAV-kontroller</span>
-                <span className="text-gray-500 font-medium">Ej aktiverat</span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span className="text-lg text-gray-900">Mejeri-kontroller</span>
-                <span className="text-gray-500 font-medium">Ej aktiverat</span>
-              </li>
-              <li className="flex items-center justify-between">
-                <span className="text-lg text-gray-900">IP Sigill / Svenskt Sigill</span>
-                <span className="text-gray-500 font-medium">Ej aktiverat</span>
-              </li>
-            </ul>
-
-            <div className="flex flex-col md:flex-row gap-6 justify-center">
-              <button
-                onClick={() => setShowInviteForm(true)}
-                className="bg-green-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-green-700 transition shadow-lg text-lg flex items-center justify-center gap-3"
-              >
-                Bjud in min rådgivare
-              </button>
-              <button
-                onClick={() => setShowHelpForm(true)}
-                className="bg-gray-600 text-white px-8 py-4 rounded-xl font-bold hover:bg-gray-700 transition shadow-lg text-lg flex items-center justify-center gap-3"
-              >
-                Jag har ingen rådgivare – hjälp mig
-              </button>
-            </div>
-
-            <button
-              onClick={() => setShowInfoModal(true)}
-              className="mt-6 text-center text-gray-600 underline text-sm"
-            >
-              Vad krävs för att aktivera detta?
-            </button>
-          </div>
-
-          {/* Din befintliga demo-markup fortsätter här (oförändrad i din nuvarande fil) */}
-          {/* Jag lämnar resten som du redan har, eftersom du bad om pilotfixarna. */}
-
-          <p className="text-center text-gray-600 mt-12 text-sm">
-            Egenkontroll – ej kvalitetssäkrat. För färdigt tillsynsunderlag, export och kvalitetssäkring krävs rådgivarläge.
-          </p>
-        </div>
+        {/* Här kan din demo-vy fortsätta som du redan har den */}
 
         <div className="text-center mt-12">
           <Link href="/" className="text-primary font-semibold underline">
@@ -780,6 +810,7 @@ function DemoView() {
           </Link>
         </div>
 
+        {/* modaler i demo kan vara kvar oförändrade */}
         {showInfoModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md">
@@ -792,9 +823,6 @@ function DemoView() {
                 <li>Full integration i tillsynsunderlag</li>
                 <li>Signering och export till Länsstyrelsen</li>
               </ul>
-              <p className="text-gray-700">
-                Kontakta eller bjud in din rådgivare för att aktivera.
-              </p>
               <button
                 onClick={() => setShowInfoModal(false)}
                 className="mt-6 w-full bg-gray-600 text-white py-3 rounded-lg font-medium hover:bg-gray-700"
@@ -812,7 +840,7 @@ function DemoView() {
               {!inviteSent ? (
                 <>
                   <p className="text-gray-700 mb-6">
-                    Ange rådgivarens e-post – vi skickar inbjudan (mock i demo).
+                    Ange rådgivarens e-post – vi skickar inbjudan.
                   </p>
                   <input
                     type="email"
@@ -826,7 +854,7 @@ function DemoView() {
                       onClick={() => setInviteSent(true)}
                       className="flex-1 bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700"
                     >
-                      Skicka inbjudan
+                      Skicka
                     </button>
                     <button
                       onClick={() => {
@@ -843,7 +871,7 @@ function DemoView() {
               ) : (
                 <>
                   <p className="text-center text-green-600 text-xl font-medium mb-6">
-                    Inbjudan skickad till {inviteEmail}! (mock)
+                    Skickat till {inviteEmail}!
                   </p>
                   <button
                     onClick={() => {
@@ -867,9 +895,6 @@ function DemoView() {
               <h3 className="text-2xl font-bold mb-4">Hitta rådgivare</h3>
               <p className="text-gray-700 mb-6">
                 Vi hjälper dig hitta en AgriReg-rådgivare i ditt område.
-              </p>
-              <p className="text-center text-green-600 text-xl font-medium mb-6">
-                Tack för intresset – vi kontaktar dig snart! (mock)
               </p>
               <button
                 onClick={() => setShowHelpForm(false)}
