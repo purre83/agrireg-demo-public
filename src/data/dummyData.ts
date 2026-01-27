@@ -6,12 +6,17 @@ export type Farm = {
   owner: string;
   region: string;
   area: number;
-  type: "bland" | "mjölk" | "växtodling" | "gris";
+  type: "bland" | "mjölk" | "växtodling" | "gris" | "dikor & ungnöt"; // <-- Ny typ tillagd
   status: FarmStatus;
   lastUpdated: string;
   nextDeadline?: string;
   currentSupport: number;
   potentialSupport: number;
+  isPilot?: boolean; // <-- Ny flagga för pilot-gårdar
+  nextAction?: string; // För pilot-vyn: "Vad ska göras – och när"
+  upcomingRequirements?: string[]; // Kommande krav
+  forgottenCommon?: string[]; // Ofta glömda saker
+  activeModules?: string[]; // Vilka checklistor som är aktiva i piloten
 };
 
 export const farms: Farm[] = [
@@ -142,6 +147,39 @@ export const farms: Farm[] = [
     lastUpdated: "2025-11-18",
     currentSupport: 275000,
     potentialSupport: 296400,
+  },
+
+  // === PILOT-GÅRD ===
+  {
+    id: "harparboda",
+    name: "Harparboda Gård",
+    owner: "Jocke Harparboda",
+    region: "Uppland", // Ändra om du vet rätt region
+    area: 120, // Gissning – ändra till rätt siffra senare
+    type: "dikor & ungnöt",
+    status: "yellow",
+    lastUpdated: "2026-01-20",
+    nextDeadline: "2026-02-15",
+    currentSupport: 280000,
+    potentialSupport: 315000,
+    isPilot: true,
+    nextAction: "Kontrollera skyddszoner för ungnöt (deadline 15 feb)",
+    upcomingRequirements: [
+      "Årlig egenkontroll djurhållning",
+      "Gödselplan uppdatering",
+      "Djurvälfärdsrapport (nötkreatur)"
+    ],
+    forgottenCommon: [
+      "Kemikaliejournal (ofta glömd)",
+      "Växtskyddsmedel-registrering",
+      "Transportdokument för djur"
+    ],
+    activeModules: [
+      "egenkontroll-miljo",
+      "djurhallning-notkreatur",
+      "journaler-dokumentation",
+      "tillsyn-sam"
+    ],
   },
 ];
 
