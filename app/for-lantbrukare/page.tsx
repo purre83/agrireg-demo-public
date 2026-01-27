@@ -21,7 +21,7 @@ type PilotStorage = {
   uploads: UploadItem[];
 };
 
-const STORAGE_KEY = 'agrireg_pilot_harparboda_v3';
+const STORAGE_KEY = 'agrireg_pilot_harparboda_v4';
 
 function safeLoad(): PilotStorage {
   if (typeof window === 'undefined') return { checks: {}, uploads: [] };
@@ -51,10 +51,34 @@ function clamp(n: number, min: number, max: number) {
   return Math.max(min, Math.min(max, n));
 }
 
+/**
+ * FIX #1 + #10:
+ * - Grön först vid 100%
+ * - Låg procent får lugn text (“Startläge – börja checka av!”)
+ */
 function statusFromPercent(pct: number) {
-  if (pct >= 80) return { key: 'green', label: 'Grön – allt under kontroll', pill: 'bg-green-100 text-green-800 border-green-200', bar: 'bg-green-600' };
-  if (pct >= 50) return { key: 'yellow', label: 'Gul – viss risk', pill: 'bg-yellow-100 text-yellow-800 border-yellow-200', bar: 'bg-yellow-600' };
-  return { key: 'red', label: 'Röd – hög risk', pill: 'bg-red-100 text-red-800 border-red-200', bar: 'bg-red-600' };
+  if (pct >= 100) {
+    return {
+      key: 'green',
+      label: 'Klart – allt avprickat',
+      pill: 'bg-green-100 text-green-800 border-green-200',
+      ring: '#2E7D32',
+    };
+  }
+  if (pct >= 50) {
+    return {
+      key: 'yellow',
+      label: 'På gång – fortsätt så',
+      pill: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+      ring: '#B45309',
+    };
+  }
+  return {
+    key: 'red',
+    label: 'Startläge – börja checka av!',
+    pill: 'bg-blue-100 text-blue-900 border-blue-200',
+    ring: '#2563EB',
+  };
 }
 
 export default function LantbrukarePage() {
@@ -139,6 +163,19 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
           'Rutiner: “vem gör vad” vid kontroll (du + ev. ersättare)',
         ],
       },
+
+      // FIX #7: KRAV delvis synlig (grund-checklista, utan export)
+      {
+        id: 'krav-grund',
+        title: 'KRAV – grundkoll (valfri)',
+        items: [
+          'Foder: spårbarhet/anteckningar finns (vid behov)',
+          'Djurvälfärd: rutin för tillsyn och åtgärd finns',
+          'Stallmiljö: liggytor och utrymmen uppfyller grundkrav',
+          'Dokument: relevanta papper samlade (kvitton/inköp)',
+        ],
+        note: 'Grundkoll för egen ordning. Ingen export/signering här.',
+      },
     ];
   }, []);
 
@@ -189,12 +226,11 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
       const arr = checks[m.id] || [];
       const done = arr.filter(Boolean).length;
       const pct = m.items.length ? Math.round((done / m.items.length) * 100) : 0;
-      return { id: m.id, title: m.title, done, total: m.items.length, pct: clamp(pct, 0, 100), status: statusFromPercent(pct) };
+      return { id: m.id, title: m.title, done, total: m.items.length, pct: clamp(pct, 0, 100), status: statusFromPercent(pct), note: (m as any).note as string | undefined };
     });
   }, [checks, modules]);
 
   const todoList = useMemo(() => {
-    // Samla ej-avprickade punkter som “att-göra”
     const todos: { moduleTitle: string; text: string }[] = [];
     for (const m of modules) {
       const arr = checks[m.id] || [];
@@ -262,9 +298,14 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
     }
   };
 
+  // FIX #6: behåll ring + text, ingen horisontell bar
   const ringStyle = {
-    background: `conic-gradient(#2E7D32 ${totals.pct * 3.6}deg, rgba(0,0,0,0.08) 0deg)`,
+    background: `conic-gradient(${overall.ring} ${totals.pct * 3.6}deg, rgba(0,0,0,0.08) 0deg)`,
   } as React.CSSProperties;
+
+  // FIX #3: gör knappen tydligt ljusgrön (inte bg-primary)
+  const exportBtnClass =
+    "inline-flex items-center justify-center gap-3 bg-green-200 text-green-900 px-6 py-4 rounded-xl font-extrabold shadow border border-green-300 hover:bg-green-300 transition";
 
   return (
     <div className="min-h-screen bg-gray-50 py-10">
@@ -283,11 +324,10 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
                 </p>
               </div>
 
-              {/* PROGRESS RING */}
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 rounded-full p-1" style={ringStyle} aria-label={`Progress ${totals.pct}%`}>
                   <div className="w-full h-full rounded-full bg-green-100 flex items-center justify-center">
-                    <span className="text-lg font-extrabold text-green-800">{totals.pct}%</span>
+                    <span className="text-lg font-extrabold text-gray-900">{totals.pct}%</span>
                   </div>
                 </div>
                 <div>
@@ -312,31 +352,17 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
                 Generera förhandsrapport
               </button>
 
+              {/* FIX #9: Smart lösning: knappen finns men är diskret, och kan tas bort helt senare */}
               <a
-                href="mailto:pilot@agrireg.se?subject=Harparboda – hjälp med export"
-                className="inline-flex items-center justify-center gap-3 bg-primary text-white px-6 py-4 rounded-xl font-extrabold shadow hover:bg-green-700 transition"
+                href="mailto:pilot@agrireg.se?subject=Harparboda – hjälp att exportera rapport"
+                className={exportBtnClass}
+                title="Valfritt: om du vill få rapporten i ett specifikt format"
               >
                 <Mail className="w-5 h-5" />
-                Vill du ha hjälp med export? Kontakta mig
+                Hjälp att exportera (valfritt)
               </a>
 
-              <Link
-                href="/"
-                className="inline-flex items-center justify-center gap-3 bg-white text-gray-900 px-6 py-4 rounded-xl font-bold shadow border border-gray-200 hover:bg-gray-50 transition"
-              >
-                Tillbaka
-              </Link>
-            </div>
-
-            {/* PROGRESS BAR */}
-            <div className="mt-6">
-              <div className="flex items-center justify-between text-xs font-semibold text-gray-700">
-                <span>{totals.pct}% klart</span>
-                <span>{overall.label}</span>
-              </div>
-              <div className="mt-2 h-3 rounded-full bg-white/60 border border-green-200 overflow-hidden">
-                <div className={`h-full ${overall.bar}`} style={{ width: `${totals.pct}%` }} />
-              </div>
+              {/* FIX #5: Ta bort tillbaka-knappen */}
             </div>
           </div>
 
@@ -353,7 +379,7 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
                   {pilotFarm?.nextAction || "Fortsätt bocka av checklistan – du är på rätt väg."}
                 </p>
                 <p className="mt-3 text-sm text-gray-700">
-                  Tips: välj 2 punkter som tar max 10 minuter och gör dem nu.
+                  Tips: välj 2 snabba punkter och gör dem direkt.
                 </p>
               </div>
 
@@ -409,7 +435,7 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
 
               <button
                 onClick={clearUploads}
-                className="inline-flex items-center justify-center gap-2 bg-primary text-white px-5 py-3 rounded-xl font-extrabold shadow hover:bg-green-700 transition"
+                className="inline-flex items-center justify-center gap-2 bg-gray-900 text-white px-5 py-3 rounded-xl font-extrabold shadow hover:bg-black transition"
               >
                 Rensa
               </button>
@@ -430,7 +456,7 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
               <>
                 <p className="mt-4 text-green-700 font-extrabold inline-flex items-center gap-2 justify-center">
                   <CheckCircle2 className="w-5 h-5" />
-                  Uppladdat! ({uploads.length})
+                  Uppladdat ({uploads.length})
                 </p>
 
                 <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -481,15 +507,20 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
               const meta = perModule.find(x => x.id === m.id);
               const modPct = meta?.pct ?? 0;
               const modStatus = meta?.status ?? statusFromPercent(0);
+              const modNote = meta?.note;
+
               return (
                 <div key={m.id} className="rounded-2xl border border-gray-200 shadow-sm bg-white overflow-hidden">
                   <div className="p-5 border-b border-gray-100 flex items-start justify-between gap-3">
                     <div>
                       <h3 className="text-lg font-extrabold">{m.title}</h3>
                       <p className="text-sm text-gray-600 mt-1">{modPct}% klart</p>
+                      {modNote && (
+                        <p className="text-xs text-gray-600 mt-2">{modNote}</p>
+                      )}
                     </div>
                     <span className={`shrink-0 inline-flex items-center px-3 py-1 rounded-full border text-xs font-extrabold ${modStatus.pill}`}>
-                      {modStatus.key === 'green' ? 'Grön' : modStatus.key === 'yellow' ? 'Gul' : 'Röd'}
+                      {modPct === 100 ? 'Klart' : modPct >= 50 ? 'På gång' : 'Start'}
                     </span>
                   </div>
 
@@ -525,33 +556,12 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
           </div>
         </div>
 
-        {/* EXPORT (frivilligt hjälp) */}
-        <div className="bg-gray-100 rounded-2xl shadow p-6 md:p-8 mb-8 border border-gray-300">
-          <div className="flex items-center mb-4 justify-center">
-            <Lock className="h-7 w-7 text-gray-700 mr-3" />
-            <h3 className="text-xl md:text-2xl font-extrabold text-gray-900">Export</h3>
-          </div>
+        {/* FIX #4: Ta bort rutan “Du har koll-läget här...” */}
+        {/* (borta) */}
 
-          <p className="text-center text-gray-800 mb-6 max-w-2xl mx-auto">
-            Din vy här är för egenkontroll och struktur. Förhandsrapporten är tydlig – men den är <span className="font-extrabold">inte inskickbar</span>.
-            Om du vill ha hjälp att få allt i “rätt format” för export kan du kontakta mig.
-          </p>
-
-          <div className="text-center">
-            <a
-              href="mailto:pilot@agrireg.se?subject=Harparboda – hjälp med export"
-              className="inline-flex items-center justify-center gap-3 bg-primary text-white px-8 py-4 rounded-xl font-extrabold shadow hover:bg-green-700 transition"
-            >
-              <Mail className="w-5 h-5" />
-              Vill du ha hjälp med export? Kontakta mig
-            </a>
-          </div>
-        </div>
-
-        <div className="bg-blue-50 rounded-2xl p-6 text-center border border-blue-200">
-          <p className="text-base md:text-lg font-semibold text-blue-900">
-            Du har koll-läget här: checklistor + filer + förhandsrapport.
-          </p>
+        {/* FOOTER (FIX #2 + #11) */}
+        <div className="text-center text-xs text-gray-500 mt-10 pb-10">
+          © 2026 AgriReg
         </div>
 
         {/* REPORT MODAL */}
@@ -596,13 +606,21 @@ function ReportModal({
   todos: { moduleTitle: string; text: string }[];
 }) {
   const status = statusFromPercent(summary.percent);
+  const topTodos = todos.slice(0, 16);
 
-  const topTodos = todos.slice(0, 12);
+  // FIX #8: close on overlay click
+  const onOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) onClose();
+  };
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden">
-        <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+    <div
+      className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+      onClick={onOverlayClick}
+    >
+      {/* FIX #8: scroll */}
+      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[85vh] overflow-y-auto">
+        <div className="p-5 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
           <div>
             <h3 className="text-xl font-extrabold">Förhandsrapport – {farmName}</h3>
             <p className="text-sm text-gray-600">
@@ -618,7 +636,6 @@ function ReportModal({
         </div>
 
         <div className="p-6 grid lg:grid-cols-2 gap-6">
-          {/* LEFT */}
           <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5">
             <div className="flex items-center justify-between">
               <h4 className="font-extrabold text-gray-900">Sammanfattning</h4>
@@ -645,18 +662,17 @@ function ReportModal({
               <div className="mt-5 bg-white rounded-xl border border-gray-200 p-4">
                 <p className="text-xs font-extrabold text-gray-700">Bifogade filer</p>
                 <ul className="mt-2 space-y-1 text-sm text-gray-800">
-                  {summary.uploads.slice(0, 8).map((u) => (
+                  {summary.uploads.slice(0, 12).map((u) => (
                     <li key={u.id} className="truncate">• {u.name}</li>
                   ))}
-                  {summary.uploads.length > 8 && (
-                    <li className="text-gray-600">… +{summary.uploads.length - 8} till</li>
+                  {summary.uploads.length > 12 && (
+                    <li className="text-gray-600">… +{summary.uploads.length - 12} till</li>
                   )}
                 </ul>
               </div>
             )}
           </div>
 
-          {/* RIGHT */}
           <div className="rounded-2xl border border-gray-200 p-5">
             <h4 className="font-extrabold text-gray-900">Åtgärdslista</h4>
             <p className="text-sm text-gray-600 mt-1">
@@ -665,7 +681,7 @@ function ReportModal({
 
             <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-4">
               {topTodos.length === 0 ? (
-                <p className="text-green-700 font-extrabold">Snyggt! Inget kvar att göra just nu.</p>
+                <p className="text-green-700 font-extrabold">Klart! Inget kvar just nu.</p>
               ) : (
                 <ul className="space-y-2 text-sm text-gray-800">
                   {topTodos.map((t, idx) => (
@@ -683,20 +699,20 @@ function ReportModal({
             <div className="mt-5 rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <p className="text-xs font-extrabold text-gray-700">Notis</p>
               <p className="mt-2 text-sm text-gray-800">
-                Den här rapporten är avsedd för egenkontroll och lugn. Den är <span className="font-extrabold">inte inskickbar</span>.
+                Den här rapporten är för egenkontroll. Den är <span className="font-extrabold">inte inskickbar</span>.
               </p>
             </div>
 
+            {/* FIX #8: “Klar” stänger */}
             <button
               onClick={onClose}
               className="mt-5 w-full bg-green-600 text-white py-3 rounded-xl font-extrabold shadow hover:bg-green-700 transition"
             >
-              Klart
+              Klar
             </button>
           </div>
         </div>
 
-        {/* Footer (i modal) */}
         <div className="px-6 pb-6 text-center text-xs text-gray-500">
           © 2026 AgriReg
         </div>
@@ -722,7 +738,7 @@ function DemoView() {
       ? 'Grön – allt under kontroll'
       : exampleFarm?.status === 'yellow'
         ? 'Gul – viss risk'
-        : 'Röd – hög risk';
+        : 'Startläge – börja checka av!';
 
   const unusedSupport = 18400;
 
@@ -795,22 +811,15 @@ function DemoView() {
                 Generera förhandsrapport
               </button>
             </div>
-
-            <p className="text-center text-gray-600 mt-8">
-              (Förhandsrapport i demo – full version: rådgivare låser, signerar och exporterar till Länsstyrelsen)
-            </p>
           </div>
         </div>
 
-        {/* Här kan din demo-vy fortsätta som du redan har den */}
-
-        <div className="text-center mt-12">
-          <Link href="/" className="text-primary font-semibold underline">
-            Tillbaka till startsidan
-          </Link>
+        {/* FIX #2/#11: ingen demo-footertext */}
+        <div className="text-center text-xs text-gray-500 mt-10 pb-10">
+          © 2026 AgriReg
         </div>
 
-        {/* modaler i demo kan vara kvar oförändrade */}
+        {/* modaler (oförändrade) */}
         {showInfoModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md">
