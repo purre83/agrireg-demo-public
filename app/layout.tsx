@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import Script from "next/script"; // <-- Ny import
+import Script from "next/script";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   viewport: {
     width: "device-width",
     initialScale: 1,
-    viewportFit: "cover", // <-- MAGISKA RADEN
+    viewportFit: "cover",
   },
 };
 
@@ -30,11 +30,11 @@ export default function RootLayout({
       <head>
         {/* Plausible Analytics – privacy-friendly */}
         <Script
-          strategy="afterInteractive"
+          strategy="beforeInteractive"  // <-- Ändrat hit – laddar tidigt i head
           src="https://plausible.io/js/pa-IzQjx6KX3qZV--5nNCSsd.js"
           async
         />
-        <Script strategy="afterInteractive" id="plausible-init">
+        <Script strategy="beforeInteractive" id="plausible-init">
           {`
             window.plausible = window.plausible || function() { (window.plausible.q = window.plausible.q || []).push(arguments) };
             window.plausible.init = window.plausible.init || function(i) { window.plausible.o = i || {} };
