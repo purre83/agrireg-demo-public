@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { Upload, FileText, Lock, Info } from 'lucide-react';
 import { useState } from 'react';
 
+export const dynamic = 'force-dynamic'; // <-- Fixar prerender-error för useSearchParams
+
 export default function LantbrukarePage() {
   const searchParams = useSearchParams();
   const pilotId = searchParams.get('pilot');
@@ -124,7 +126,7 @@ export default function LantbrukarePage() {
     );
   }
 
-  // Vanliga demo-vyn (din fulla originala kod)
+  // Vanliga demo-vyn (din originala kod – komplett)
   const exampleFarm = farms[0];
 
   const bondStatusColor = exampleFarm.status === 'green' ? 'bg-green-600 text-white' : 
@@ -146,7 +148,6 @@ export default function LantbrukarePage() {
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-4xl mx-auto px-4">
-        {/* Välkomst */}
         <div className="bg-green-100 p-8 rounded-xl mb-12 text-center shadow-md">
           <h1 className="text-4xl font-bold mb-4">Välkommen som lantbrukare!</h1>
           <p className="text-xl max-w-3xl mx-auto">
@@ -154,9 +155,7 @@ export default function LantbrukarePage() {
           </p>
         </div>
 
-        {/* Gård-kort */}
         <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          {/* Status-badge högst upp */}
           <div className={`p-4 text-center font-bold text-xl ${bondStatusColor}`}>
             {statusText}
           </div>
@@ -181,7 +180,6 @@ export default function LantbrukarePage() {
               </div>
             </div>
 
-            {/* Knappar – "Generera förhandsrapport" för bönder */}
             <div className="flex flex-col sm:flex-row gap-8 justify-center">
               <button className="flex items-center justify-center gap-4 bg-blue-600 text-white px-10 py-6 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg text-xl">
                 <Upload size={32} />
@@ -199,14 +197,12 @@ export default function LantbrukarePage() {
           </div>
         </div>
 
-        {/* Egenkontroll */}
         <div className="mt-16">
           <h2 className="text-3xl font-bold text-center mb-8">Egenkontroll</h2>
           <p className="text-center text-gray-600 mb-12 max-w-3xl mx-auto">
             Snabbkoll på vad som är klart inför tillsyn. Full version med rådgivare ger kvalitetssäkrat underlag.
           </p>
 
-          {/* Certifiering & specialkontroller – paywall högst upp */}
           <div className="bg-gray-100 rounded-2xl shadow-lg p-8 mb-12 border border-gray-300 relative">
             <div className="flex items-center mb-6">
               <Lock className="h-8 w-8 text-gray-500 mr-3" />
@@ -255,7 +251,6 @@ export default function LantbrukarePage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Dokumentstatus */}
             <div className="bg-white rounded-xl shadow p-6">
               <h3 className="text-xl font-semibold mb-4">Dokumentstatus</h3>
               <ul className="space-y-3">
@@ -297,7 +292,6 @@ export default function LantbrukarePage() {
               </p>
             </div>
 
-            {/* Miljörisk */}
             <div className="bg-white rounded-xl shadow p-6">
               <h3 className="text-xl font-semibold mb-4">Miljörisk – snabbkoll</h3>
               <ul className="space-y-3">
@@ -332,7 +326,6 @@ export default function LantbrukarePage() {
               </p>
             </div>
 
-            {/* Deadline-koll */}
             <div className="bg-white rounded-xl shadow p-6">
               <h3 className="text-xl font-semibold mb-4">Deadline-koll</h3>
               <ul className="space-y-3">
@@ -359,7 +352,6 @@ export default function LantbrukarePage() {
               </ul>
             </div>
 
-            {/* Fält & skyddszoner */}
             <div className="bg-white rounded-xl shadow p-6">
               <h3 className="text-xl font-semibold mb-4">Fält & skyddszoner – foton</h3>
               <ul className="space-y-3">
@@ -385,7 +377,6 @@ export default function LantbrukarePage() {
               </button>
             </div>
 
-            {/* Om kontrollen kommer */}
             <div className="bg-white rounded-xl shadow p-6 md:col-span-2">
               <h3 className="text-xl font-semibold mb-4">Om kontrollen kommer i morgon</h3>
               <ul className="space-y-3">
@@ -413,7 +404,6 @@ export default function LantbrukarePage() {
               <p className="mt-6 text-center text-2xl font-bold text-green-600">Redo</p>
             </div>
 
-            {/* Att-göra-lista */}
             <div className="bg-white rounded-xl shadow p-6 md:col-span-2">
               <h3 className="text-xl font-semibold mb-4">Min att-göra-lista</h3>
               <ul className="space-y-3">
@@ -438,14 +428,12 @@ export default function LantbrukarePage() {
           </p>
         </div>
 
-        {/* Länk tillbaka */}
         <div className="text-center mt-12">
           <Link href="/" className="text-primary font-semibold underline">
             Tillbaka till startsidan
           </Link>
         </div>
 
-        {/* Info-modal */}
         {showInfoModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md">
@@ -471,7 +459,6 @@ export default function LantbrukarePage() {
           </div>
         )}
 
-        {/* Inbjudan-form mock */}
         {showInviteForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md">
@@ -528,7 +515,6 @@ export default function LantbrukarePage() {
           </div>
         )}
 
-        {/* Hjälp-form mock */}
         {showHelpForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md">
