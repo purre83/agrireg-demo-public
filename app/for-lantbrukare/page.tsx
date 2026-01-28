@@ -839,7 +839,7 @@ function DemoView() {
                   Så här ser lantbrukarvyn ut
                 </h1>
                 <p className="text-base md:text-lg mt-3 text-gray-800 max-w-2xl">
-                  Detta är en demo-layout. Den visar flödet och modulerna, men sparar inte och går inte att “skicka in”.
+                  Demo-layout som visar flöde och moduler. Ingen data sparas i denna vy.
                 </p>
               </div>
 
