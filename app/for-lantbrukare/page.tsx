@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { farms } from "@/src/data/dummyData";
+import { farms } from '@/src/data/dummyData';
 import { Upload, FileText, Lock, CheckCircle2, X, Mail, Camera } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import type { ChangeEvent, DragEvent } from 'react';
 
 type Farm = any;
@@ -52,7 +52,6 @@ function clamp(n: number, min: number, max: number) {
 }
 
 /**
- * FIX #1 + #10:
  * - Grön först vid 100%
  * - Låg procent får lugn text (“Startläge – börja checka av!”)
  */
@@ -80,6 +79,164 @@ function statusFromPercent(pct: number) {
     ring: '#2563EB',
   };
 }
+
+/* ------------------------- PDF (via utskrift) ------------------------- */
+
+function escapeHtml(str: string) {
+  return String(str)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+function openPrintWindow(html: string, title = 'AgriReg – Förhandsrapport') {
+  const w = window.open('', '_blank', 'noopener,noreferrer');
+  if (!w) return;
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+  w.document.title = title;
+
+  // Vänta lite tills DOM finns, sedan trigga print (användaren väljer "Spara som PDF")
+  setTimeout(() => {
+    try {
+      w.focus();
+      w.print();
+    } catch {
+      // ignore
+    }
+  }, 250);
+}
+
+function buildReportHtml(params: {
+  farmName: string;
+  farmType: string;
+  generatedAt: string;
+  percent: number;
+  done: number;
+  total: number;
+  modules: { title: string; done: number; total: number }[];
+  todos: { moduleTitle: string; text: string }[];
+  uploads: UploadItem[];
+}) {
+  const {
+    farmName,
+    farmType,
+    generatedAt,
+    percent,
+    done,
+    total,
+    modules,
+    todos,
+    uploads,
+  } = params;
+
+  const topTodos = todos.slice(0, 24);
+  const fileNames = uploads.slice(0, 20).map((u) => u.name);
+
+  const rows = modules
+    .map(
+      (m) => `
+      <tr>
+        <td>${escapeHtml(m.title)}</td>
+        <td style="text-align:right">${m.done}/${m.total}</td>
+      </tr>
+    `
+    )
+    .join('');
+
+  const todoRows =
+    topTodos.length === 0
+      ? `<p style="margin:0;color:#166534;font-weight:700">Inget kvar just nu. Snyggt!</p>`
+      : `<ol style="margin:8px 0 0 18px;padding:0">
+        ${topTodos
+          .map(
+            (t) =>
+              `<li style="margin:6px 0"><strong>${escapeHtml(t.moduleTitle)}:</strong> ${escapeHtml(
+                t.text
+              )}</li>`
+          )
+          .join('')}
+      </ol>`;
+
+  const filesHtml =
+    fileNames.length === 0
+      ? `<p style="margin:0;color:#6b7280">Inga filer bifogade</p>`
+      : `<ul style="margin:8px 0 0 18px;padding:0">
+          ${fileNames.map((n) => `<li style="margin:4px 0">${escapeHtml(n)}</li>`).join('')}
+        </ul>`;
+
+  return `<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AgriReg – Förhandsrapport</title>
+<style>
+  *{box-sizing:border-box}
+  body{font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; margin:0; padding:24px; color:#111827}
+  .wrap{max-width:900px; margin:0 auto}
+  .header{display:flex; justify-content:space-between; align-items:flex-start; gap:16px; padding:18px; border:1px solid #e5e7eb; border-radius:14px; background:#f0fdf4}
+  .h1{font-size:22px; font-weight:900; margin:0}
+  .sub{margin:6px 0 0; color:#374151}
+  .meta{margin:10px 0 0; font-size:12px; color:#374151}
+  .grid{display:grid; grid-template-columns:1fr; gap:14px; margin-top:14px}
+  @media(min-width:900px){ .grid{grid-template-columns:1fr 1fr} }
+  .card{border:1px solid #e5e7eb; border-radius:14px; padding:16px; background:#fff}
+  .card h2{margin:0 0 10px; font-size:14px; font-weight:900}
+  table{width:100%; border-collapse:collapse}
+  td{padding:10px 8px; border-top:1px solid #f3f4f6; vertical-align:top}
+  .muted{color:#6b7280}
+  .note{margin-top:14px; padding:12px; border-radius:12px; border:1px solid #e5e7eb; background:#f9fafb; font-size:12px; color:#374151}
+  .footer{margin-top:14px; text-align:center; font-size:12px; color:#6b7280}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header">
+      <div>
+        <p class="h1">Förhandsrapport – ${escapeHtml(farmName)}</p>
+        <p class="sub">${escapeHtml(farmType)} • För egenkontroll</p>
+        <p class="meta"><strong>Skapad:</strong> ${escapeHtml(generatedAt)}</p>
+      </div>
+      <div style="text-align:right">
+        <div style="font-weight:900; font-size:18px">${percent}%</div>
+        <div class="muted" style="margin-top:2px">Klart: ${done}/${total}</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Moduler</h2>
+        <table>
+          ${rows}
+        </table>
+        <div style="margin-top:12px">
+          <h2 style="margin:0 0 6px">Bifogade filer</h2>
+          ${filesHtml}
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Åtgärdslista</h2>
+        <p class="muted" style="margin:0">Bygger på det som inte är avprickat ännu.</p>
+        ${todoRows}
+
+        <div class="note">
+          <strong>Notis:</strong> Den här rapporten är för egenkontroll. Export/”formell” sammanställning görs i rådgivarläge om du behöver det.
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">© 2026 AgriReg</div>
+  </div>
+</body>
+</html>`;
+}
+
+/* ------------------------- PAGE ------------------------- */
 
 export default function LantbrukarePage() {
   const [pilotId, setPilotId] = useState<string | null>(null);
@@ -112,7 +269,6 @@ export default function LantbrukarePage() {
 }
 
 /* ------------------------- PILOT VIEW ------------------------- */
-/* (LÄMNAS OBEARBETAD – enligt din instruktion) */
 
 function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
   const modules = useMemo(() => {
@@ -164,8 +320,6 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
           'Rutiner: “vem gör vad” vid kontroll (du + ev. ersättare)',
         ],
       },
-
-      // FIX #7: KRAV delvis synlig (grund-checklista, utan export)
       {
         id: 'krav-grund',
         title: 'KRAV – grundkoll (valfri)',
@@ -183,6 +337,9 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
   const [checks, setChecks] = useState<Record<string, boolean[]>>({});
   const [uploads, setUploads] = useState<UploadItem[]>([]);
   const [showReport, setShowReport] = useState(false);
+
+  // FIX #6: bildförstoring
+  const [previewUpload, setPreviewUpload] = useState<UploadItem | null>(null);
 
   // init from localStorage
   useEffect(() => {
@@ -234,7 +391,7 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
         total: m.items.length,
         pct: clamp(pct, 0, 100),
         status: statusFromPercent(pct),
-        note: (m as any).note as string | undefined
+        note: (m as any).note as string | undefined,
       };
     });
   }, [checks, modules]);
@@ -307,14 +464,36 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
     }
   };
 
-  // FIX #6: behåll ring + text, ingen horisontell bar
   const ringStyle = {
     background: `conic-gradient(${overall.ring} ${totals.pct * 3.6}deg, rgba(0,0,0,0.08) 0deg)`,
   } as React.CSSProperties;
 
-  // FIX #3: gör knappen tydligt ljusgrön (inte bg-primary)
   const exportBtnClass =
-    "inline-flex items-center justify-center gap-3 bg-green-200 text-green-900 px-6 py-4 rounded-xl font-extrabold shadow border border-green-300 hover:bg-green-300 transition";
+    'inline-flex items-center justify-center gap-3 bg-green-200 text-green-900 px-6 py-4 rounded-xl font-extrabold shadow border border-green-300 hover:bg-green-300 transition';
+
+  // FIX #1: rapport-preview + "ladda ner PDF" (via utskrift)
+  const downloadReportPdf = () => {
+    const now = new Date();
+    const generatedAt = now.toLocaleString('sv-SE', { hour12: false });
+
+    const html = buildReportHtml({
+      farmName: 'Harparboda Gård',
+      farmType: 'Dikor & ungnöt',
+      generatedAt,
+      percent: totals.pct,
+      done: totals.done,
+      total: totals.total,
+      uploads,
+      modules: modules.map((m) => ({
+        title: m.title,
+        done: (checks[m.id] || []).filter(Boolean).length,
+        total: m.items.length,
+      })),
+      todos: todoList,
+    });
+
+    openPrintWindow(html);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-10">
@@ -325,9 +504,7 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
               <div>
                 <p className="text-sm font-semibold text-green-900/80">Harparboda Gård • dikor & ungnöt</p>
-                <h1 className="text-3xl md:text-4xl font-extrabold mt-1">
-                  Hej Jocke – din vy för Harparboda Gård
-                </h1>
+                <h1 className="text-3xl md:text-4xl font-extrabold mt-1">Hej Jocke – din vy för Harparboda Gård</h1>
                 <p className="text-base md:text-lg mt-3 text-gray-800 max-w-2xl">
                   Bocka av checklistor, ladda upp underlag och skapa din förhandsrapport. Allt sparas lokalt i din webbläsare.
                 </p>
@@ -369,24 +546,20 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
                 <Mail className="w-5 h-5" />
                 Hjälp att exportera (valfritt)
               </a>
+
+              {/* FIX #4: ingen “boka pilot”-knapp här (finns inte längre) */}
             </div>
           </div>
 
           {/* VAD SKA GÖRAS – OCH NÄR */}
           <div className="p-6 md:p-8">
-            <h2 className="text-2xl md:text-3xl font-extrabold text-primary mb-6 text-center">
-              Vad ska göras – och när
-            </h2>
+            <h2 className="text-2xl md:text-3xl font-extrabold text-primary mb-6 text-center">Vad ska göras – och när</h2>
 
             <div className="grid md:grid-cols-3 gap-6">
               <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6">
                 <h3 className="text-lg font-extrabold mb-2">Nästa åtgärd</h3>
-                <p className="text-xl font-semibold text-gray-900">
-                  {pilotFarm?.nextAction || "Fortsätt bocka av checklistan – du är på rätt väg."}
-                </p>
-                <p className="mt-3 text-sm text-gray-700">
-                  Tips: välj 2 snabba punkter och gör dem direkt.
-                </p>
+                <p className="text-xl font-semibold text-gray-900">{pilotFarm?.nextAction || 'Fortsätt bocka av checklistan – du är på rätt väg.'}</p>
+                <p className="mt-3 text-sm text-gray-700">Tips: välj 2 snabba punkter och gör dem direkt.</p>
               </div>
 
               <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6">
@@ -421,22 +594,14 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
               <h2 className="text-2xl font-extrabold">Dokument & foton</h2>
-              <p className="text-gray-700 mt-1">
-                Välj filer eller dra in dem här. Du får preview direkt och allt sparas lokalt.
-              </p>
+              <p className="text-gray-700 mt-1">Välj filer eller dra in dem här. Du får preview direkt och allt sparas lokalt.</p>
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">
               <label className="inline-flex items-center justify-center gap-3 bg-blue-600 text-white px-5 py-3 rounded-xl font-extrabold shadow hover:bg-blue-700 transition cursor-pointer">
                 <Upload className="w-5 h-5" />
                 Ladda upp
-                <input
-                  type="file"
-                  className="hidden"
-                  multiple
-                  accept="image/*,application/pdf"
-                  onChange={onInputFiles}
-                />
+                <input type="file" className="hidden" multiple accept="image/*,application/pdf" onChange={onInputFiles} />
               </label>
 
               <button
@@ -448,11 +613,7 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
             </div>
           </div>
 
-          <div
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={onDrop}
-            className="mt-6 rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 p-6 md:p-10 text-center"
-          >
+          <div onDragOver={(e) => e.preventDefault()} onDrop={onDrop} className="mt-6 rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 p-6 md:p-10 text-center">
             <div className="inline-flex items-center gap-3 text-gray-700 font-semibold">
               <Camera className="w-5 h-5" />
               Släpp filer här (foton/PDF)
@@ -470,31 +631,38 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
                     <div key={u.id} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden relative">
                       <button
                         onClick={() => removeUpload(u.id)}
-                        className="absolute top-2 right-2 bg-white/90 border border-gray-200 rounded-full p-1 hover:bg-gray-100"
+                        className="absolute top-2 right-2 bg-white/90 border border-gray-200 rounded-full p-1 hover:bg-gray-100 z-10"
                         aria-label="Ta bort fil"
                       >
                         <X className="w-4 h-4" />
                       </button>
 
-                      <div className="h-24 bg-gray-100 flex items-center justify-center">
-                        {u.dataUrl?.startsWith('data:image') ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={u.dataUrl} alt={u.name} className="h-full w-full object-cover" />
-                        ) : (
-                          <div className="flex items-center gap-2 text-gray-700">
-                            <FileText className="w-5 h-5" />
-                            <span className="text-xs font-semibold">PDF</span>
-                          </div>
-                        )}
-                      </div>
+                      <button
+                        type="button"
+                        className="w-full"
+                        onClick={() => {
+                          if (u.dataUrl?.startsWith('data:image')) setPreviewUpload(u);
+                        }}
+                        title={u.dataUrl?.startsWith('data:image') ? 'Klicka för att förstora' : undefined}
+                      >
+                        <div className="h-24 bg-gray-100 flex items-center justify-center">
+                          {u.dataUrl?.startsWith('data:image') ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={u.dataUrl} alt={u.name} className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="flex items-center gap-2 text-gray-700">
+                              <FileText className="w-5 h-5" />
+                              <span className="text-xs font-semibold">PDF</span>
+                            </div>
+                          )}
+                        </div>
+                      </button>
 
                       <div className="p-3">
                         <p className="text-xs font-semibold text-gray-900 truncate" title={u.name}>
                           {u.name}
                         </p>
-                        <p className="text-[10px] text-gray-500 mt-1">
-                          Sparas lokalt i din webbläsare
-                        </p>
+                        <p className="text-[10px] text-gray-500 mt-1">{u.dataUrl?.startsWith('data:image') ? 'Klicka på bilden för att förstora' : 'Sparas lokalt i din webbläsare'}</p>
                       </div>
                     </div>
                   ))}
@@ -510,22 +678,24 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
 
           <div className="grid md:grid-cols-2 gap-6">
             {modules.map((m) => {
-              const meta = perModule.find(x => x.id === m.id);
+              const meta = perModule.find((x) => x.id === m.id);
               const modPct = meta?.pct ?? 0;
-              const modStatus = meta?.status ?? statusFromPercent(0);
               const modNote = meta?.note;
 
+              // FIX #3: 0% ska se röd ut i checklist-kortet (men toppen är lugn)
+              const isZero = modPct === 0;
+              const pillClass = isZero ? 'bg-red-100 text-red-800 border-red-200' : (meta?.status?.pill ?? statusFromPercent(0).pill);
+              const cardBorder = isZero ? 'border-red-200' : 'border-gray-200';
+
               return (
-                <div key={m.id} className="rounded-2xl border border-gray-200 shadow-sm bg-white overflow-hidden">
+                <div key={m.id} className={`rounded-2xl border ${cardBorder} shadow-sm bg-white overflow-hidden`}>
                   <div className="p-5 border-b border-gray-100 flex items-start justify-between gap-3">
                     <div>
                       <h3 className="text-lg font-extrabold">{m.title}</h3>
                       <p className="text-sm text-gray-600 mt-1">{modPct}% klart</p>
-                      {modNote && (
-                        <p className="text-xs text-gray-600 mt-2">{modNote}</p>
-                      )}
+                      {modNote && <p className="text-xs text-gray-600 mt-2">{modNote}</p>}
                     </div>
-                    <span className={`shrink-0 inline-flex items-center px-3 py-1 rounded-full border text-xs font-extrabold ${modStatus.pill}`}>
+                    <span className={`shrink-0 inline-flex items-center px-3 py-1 rounded-full border text-xs font-extrabold ${pillClass}`}>
                       {modPct === 100 ? 'Klart' : modPct >= 50 ? 'På gång' : 'Start'}
                     </span>
                   </div>
@@ -538,9 +708,7 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
                           key={idx}
                           onClick={() => toggleItem(m.id, idx)}
                           className={`w-full text-left flex items-start gap-3 rounded-xl px-4 py-3 border transition ${
-                            checked
-                              ? 'bg-green-50 border-green-200'
-                              : 'bg-white border-gray-200 hover:bg-gray-50'
+                            checked ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200 hover:bg-gray-50'
                           }`}
                         >
                           <span
@@ -562,15 +730,14 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
           </div>
         </div>
 
-        {/* FOOTER */}
-        <div className="text-center text-xs text-gray-500 mt-10 pb-10">
-          © 2026 AgriReg
-        </div>
+        {/* FOOTER (ingen demo-text) */}
+        <div className="text-center text-xs text-gray-500 mt-10 pb-10">© 2026 AgriReg</div>
 
         {/* REPORT MODAL */}
         {showReport && (
           <ReportModal
             onClose={() => setShowReport(false)}
+            onDownloadPdf={downloadReportPdf}
             farmName="Harparboda Gård"
             farmType="Dikor & ungnöt"
             summary={{
@@ -588,6 +755,40 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
             todos={todoList}
           />
         )}
+
+        {/* IMAGE PREVIEW MODAL */}
+        {previewUpload && (
+          <ImagePreviewModal upload={previewUpload} onClose={() => setPreviewUpload(null)} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ImagePreviewModal({ upload, onClose }: { upload: UploadItem; onClose: () => void }) {
+  const onOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onOverlayClick}>
+      <div className="w-full max-w-5xl bg-white rounded-2xl shadow-2xl overflow-hidden">
+        <div className="p-4 border-b border-gray-100 flex items-center justify-between">
+          <div className="min-w-0">
+            <p className="font-extrabold text-gray-900 truncate" title={upload.name}>
+              {upload.name}
+            </p>
+            <p className="text-xs text-gray-600">Förhandsvisning</p>
+          </div>
+          <button onClick={onClose} className="rounded-xl border border-gray-200 bg-white px-3 py-2 font-bold hover:bg-gray-50">
+            Stäng
+          </button>
+        </div>
+
+        <div className="p-4 bg-gray-50">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={upload.dataUrl} alt={upload.name} className="w-full max-h-[75vh] object-contain rounded-xl bg-white border border-gray-200" />
+        </div>
       </div>
     </div>
   );
@@ -595,6 +796,7 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
 
 function ReportModal({
   onClose,
+  onDownloadPdf,
   farmName,
   farmType,
   summary,
@@ -602,60 +804,58 @@ function ReportModal({
   todos,
 }: {
   onClose: () => void;
+  onDownloadPdf: () => void;
   farmName: string;
   farmType: string;
   summary: { percent: number; done: number; total: number; uploads: UploadItem[]; overallLabel: string };
   modules: { title: string; done: number; total: number }[];
   todos: { moduleTitle: string; text: string }[];
 }) {
-  const status = statusFromPercent(summary.percent);
   const topTodos = todos.slice(0, 16);
 
-  // close on overlay click
   const onOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) onClose();
   };
 
   return (
-    <div
-      className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
-      onClick={onOverlayClick}
-    >
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4" onClick={onOverlayClick}>
       <div className="w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[85vh] overflow-y-auto">
         <div className="p-5 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
           <div>
             <h3 className="text-xl font-extrabold">Förhandsrapport – {farmName}</h3>
             <p className="text-sm text-gray-600">
-              {farmType} • <span className="font-bold">Ej inskickbar</span> (för egenkontroll)
+              {farmType} • <span className="font-bold">För egenkontroll</span>
             </p>
           </div>
-          <button
-            onClick={onClose}
-            className="rounded-xl border border-gray-200 bg-white px-3 py-2 font-bold hover:bg-gray-50"
-          >
+          <button onClick={onClose} className="rounded-xl border border-gray-200 bg-white px-3 py-2 font-bold hover:bg-gray-50">
             Stäng
           </button>
         </div>
 
         <div className="p-6 grid lg:grid-cols-2 gap-6">
+          {/* LEFT */}
           <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5">
             <div className="flex items-center justify-between">
               <h4 className="font-extrabold text-gray-900">Sammanfattning</h4>
-              <span className={`text-xs font-extrabold px-3 py-1 rounded-full border ${status.pill}`}>
-                {summary.overallLabel}
-              </span>
+              {/* FIX #5: ta bort “Startläge...” bredvid Sammanfattning (ingen status-pill här) */}
             </div>
 
             <div className="mt-4 space-y-2 text-sm text-gray-800">
-              <p><span className="font-bold">Klarhet:</span> {summary.percent}% ({summary.done}/{summary.total})</p>
-              <p><span className="font-bold">Filer:</span> {summary.uploads.length}</p>
+              <p>
+                <span className="font-bold">Klarhet:</span> {summary.percent}% ({summary.done}/{summary.total})
+              </p>
+              <p>
+                <span className="font-bold">Filer:</span> {summary.uploads.length}
+              </p>
             </div>
 
             <div className="mt-5 space-y-2">
               {modules.map((m, i) => (
                 <div key={i} className="flex items-center justify-between bg-white rounded-xl border border-gray-200 px-4 py-3">
                   <span className="text-sm font-bold text-gray-900">{m.title}</span>
-                  <span className="text-sm text-gray-700">{m.done}/{m.total}</span>
+                  <span className="text-sm text-gray-700">
+                    {m.done}/{m.total}
+                  </span>
                 </div>
               ))}
             </div>
@@ -665,21 +865,33 @@ function ReportModal({
                 <p className="text-xs font-extrabold text-gray-700">Bifogade filer</p>
                 <ul className="mt-2 space-y-1 text-sm text-gray-800">
                   {summary.uploads.slice(0, 12).map((u) => (
-                    <li key={u.id} className="truncate">• {u.name}</li>
+                    <li key={u.id} className="truncate">
+                      • {u.name}
+                    </li>
                   ))}
-                  {summary.uploads.length > 12 && (
-                    <li className="text-gray-600">… +{summary.uploads.length - 12} till</li>
-                  )}
+                  {summary.uploads.length > 12 && <li className="text-gray-600">… +{summary.uploads.length - 12} till</li>}
                 </ul>
               </div>
             )}
+
+            {/* FIX #1: PDF */}
+            <button
+              onClick={onDownloadPdf}
+              className="mt-5 w-full bg-white border border-gray-200 py-3 rounded-xl font-extrabold shadow hover:bg-gray-50 transition inline-flex items-center justify-center gap-2"
+            >
+              <FileText className="w-5 h-5" />
+              Ladda ner som PDF
+            </button>
+
+            <p className="mt-2 text-[11px] text-gray-600 text-center">
+              (Öppnar utskriftsrutan – välj “Spara som PDF”.)
+            </p>
           </div>
 
+          {/* RIGHT */}
           <div className="rounded-2xl border border-gray-200 p-5">
             <h4 className="font-extrabold text-gray-900">Åtgärdslista</h4>
-            <p className="text-sm text-gray-600 mt-1">
-              Bygger på det som inte är avprickat ännu.
-            </p>
+            <p className="text-sm text-gray-600 mt-1">Bygger på det som inte är avprickat ännu.</p>
 
             <div className="mt-4 rounded-2xl border border-gray-200 bg-white p-4">
               {topTodos.length === 0 ? (
@@ -701,29 +913,25 @@ function ReportModal({
             <div className="mt-5 rounded-2xl border border-gray-200 bg-gray-50 p-4">
               <p className="text-xs font-extrabold text-gray-700">Notis</p>
               <p className="mt-2 text-sm text-gray-800">
-                Den här rapporten är för egenkontroll. Den är <span className="font-extrabold">inte inskickbar</span>.
+                Den här rapporten är för egenkontroll. Om du behöver export i specifikt format kan du ta hjälp med det.
               </p>
             </div>
 
-            <button
-              onClick={onClose}
-              className="mt-5 w-full bg-green-600 text-white py-3 rounded-xl font-extrabold shadow hover:bg-green-700 transition"
-            >
+            {/* “Klar” stänger */}
+            <button onClick={onClose} className="mt-5 w-full bg-green-600 text-white py-3 rounded-xl font-extrabold shadow hover:bg-green-700 transition">
               Klar
             </button>
           </div>
         </div>
 
-        <div className="px-6 pb-6 text-center text-xs text-gray-500">
-          © 2026 AgriReg
-        </div>
+        <div className="px-6 pb-6 text-center text-xs text-gray-500">© 2026 AgriReg</div>
       </div>
     </div>
   );
 }
 
 /* ------------------------- DEMO VIEW ------------------------- */
-/* FIXAD: återställer “resten av sidan” + gör den lik Jockes vy men icke-funktionell. */
+/* Lämnas som i din senaste version (demo ska vara “lik” men ej funktionell). */
 
 function DemoView() {
   const exampleFarm = Array.isArray(farms) && farms.length > 0 ? farms[0] : null;
@@ -734,7 +942,6 @@ function DemoView() {
   const [inviteSent, setInviteSent] = useState(false);
   const [showHelpForm, setShowHelpForm] = useState(false);
 
-  // “Ser ut som” Jockes vy men utan funktion: statiska siffror
   const demoPct = exampleFarm?.status === 'green' ? 78 : exampleFarm?.status === 'yellow' ? 55 : 25;
   const demoDone = Math.round((demoPct / 100) * 22);
   const demoTotal = 22;
@@ -750,53 +957,29 @@ function DemoView() {
         id: 'djurhallning',
         title: 'Djurhållning – exempel',
         note: 'I demon klickar du inte – detta är en förhandsvisning.',
-        items: [
-          'Djur-ID/märkning kontrollerad',
-          'Vatten kontrollerat',
-          'Liggplatser/strö kontrollerat',
-          'Foderlager kontrollerat',
-          'Sjukbox/rutin kontrollerad',
-        ],
+        items: ['Djur-ID/märkning kontrollerad', 'Vatten kontrollerat', 'Liggplatser/strö kontrollerat', 'Foderlager kontrollerat', 'Sjukbox/rutin kontrollerad'],
       },
       {
         id: 'journaler',
         title: 'Journaler & dokumentation – exempel',
-        items: [
-          'Stalljournal uppdaterad',
-          'Foder-/inköpsunderlag sparat',
-          'Kontaktlista uppdaterad',
-          'Fotodokumentation sparad',
-        ],
+        items: ['Stalljournal uppdaterad', 'Foder-/inköpsunderlag sparat', 'Kontaktlista uppdaterad', 'Fotodokumentation sparad'],
       },
       {
         id: 'miljo',
         title: 'Egenkontroll – miljö (bas) – exempel',
-        items: [
-          'Gödsel: rundgång gjord',
-          'Skyddszoner/vattendrag kontrollerade',
-          'Diesel/oljor kontrollerade',
-          'Avfall sorterat',
-        ],
+        items: ['Gödsel: rundgång gjord', 'Skyddszoner/vattendrag kontrollerade', 'Diesel/oljor kontrollerade', 'Avfall sorterat'],
       },
       {
         id: 'sam',
         title: 'Tillsyn & arbetsmiljö (SAM) – grund',
         note: 'Grundkoll synlig i demo. Full export/signering kräver rådgivarläge.',
-        items: [
-          'Första hjälpen + brandsläckare kontrollerade',
-          'Maskiner: synlig risk avprickad',
-          'Gångvägar/ramper: halkrisk åtgärdad',
-        ],
+        items: ['Första hjälpen + brandsläckare kontrollerade', 'Maskiner: synlig risk avprickad', 'Gångvägar/ramper: halkrisk åtgärdad'],
       },
       {
         id: 'cert',
         title: 'Certifiering (KRAV / Mejeri / IP) – översikt',
         note: 'Visas som “låst” i demo. Du kan bjuda in rådgivare om du vill.',
-        items: [
-          'KRAV – grundkrav översikt',
-          'Mejeri – dokumentöversikt',
-          'IP Sigill – checklista översikt',
-        ],
+        items: ['KRAV – grundkrav översikt', 'Mejeri – dokumentöversikt', 'IP Sigill – checklista översikt'],
         locked: true,
       },
     ];
@@ -820,27 +1003,20 @@ function DemoView() {
     );
   }
 
-  // “Icke-funktionell” UI: knappar ser riktiga ut men är disabled
-  const disabledBtn =
-    "inline-flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-extrabold shadow transition opacity-60 cursor-not-allowed";
+  const disabledBtn = 'inline-flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-extrabold shadow transition opacity-60 cursor-not-allowed';
   const disabledBtnGreen = `${disabledBtn} bg-green-600 text-white`;
   const disabledBtnBlue = `${disabledBtn} bg-blue-600 text-white`;
 
   return (
     <div className="min-h-screen bg-gray-50 py-10">
       <div className="max-w-5xl mx-auto px-4">
-        {/* DEMO-BANNER (liknar Jockes vy) */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden mb-8">
           <div className="p-6 md:p-8 bg-green-100 border-b border-green-200">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
               <div>
                 <p className="text-sm font-semibold text-green-900/80">Demo • lantbrukare</p>
-                <h1 className="text-3xl md:text-4xl font-extrabold mt-1">
-                  Så här ser lantbrukarvyn ut
-                </h1>
-                <p className="text-base md:text-lg mt-3 text-gray-800 max-w-2xl">
-                  Demo-layout som visar flöde och moduler. Ingen data sparas i denna vy.
-                </p>
+                <h1 className="text-3xl md:text-4xl font-extrabold mt-1">Så här ser lantbrukarvyn ut</h1>
+                <p className="text-base md:text-lg mt-3 text-gray-800 max-w-2xl">Demo-layout som visar flöde och moduler. Ingen data sparas i denna vy.</p>
               </div>
 
               <div className="flex items-center gap-4">
@@ -861,7 +1037,6 @@ function DemoView() {
               </div>
             </div>
 
-            {/* TOP ACTIONS (visuellt, ej funktionellt) */}
             <div className="mt-6 flex flex-col sm:flex-row gap-3">
               <button disabled className={disabledBtnGreen}>
                 <FileText className="w-5 h-5" />
@@ -873,16 +1048,12 @@ function DemoView() {
                 Ladda upp dokument/foto
               </button>
 
-              <Link
-                href="/"
-                className="inline-flex items-center justify-center gap-3 bg-white text-gray-900 px-6 py-4 rounded-xl font-bold shadow border border-gray-200 hover:bg-gray-50 transition"
-              >
+              <Link href="/" className="inline-flex items-center justify-center gap-3 bg-white text-gray-900 px-6 py-4 rounded-xl font-bold shadow border border-gray-200 hover:bg-gray-50 transition">
                 Tillbaka
               </Link>
             </div>
           </div>
 
-          {/* “Din gård”-kort (demo) */}
           <div className="p-6 md:p-8">
             <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6">
               <h2 className="text-xl md:text-2xl font-extrabold text-gray-900">Din gård (demo)</h2>
@@ -907,7 +1078,7 @@ function DemoView() {
           </div>
         </div>
 
-        {/* CHECKLISTOR (demo: synliga men icke-klickbara) */}
+        {/* CHECKLISTOR (demo) */}
         <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8 mb-8 border border-gray-200">
           <h2 className="text-2xl md:text-3xl font-extrabold text-center mb-6">Checklistor (demo)</h2>
 
@@ -922,9 +1093,11 @@ function DemoView() {
                       {m.note && <p className="text-xs text-gray-600 mt-2">{m.note}</p>}
                     </div>
 
-                    <span className={`shrink-0 inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-extrabold ${
-                      locked ? 'bg-gray-100 text-gray-700 border-gray-200' : 'bg-blue-100 text-blue-900 border-blue-200'
-                    }`}>
+                    <span
+                      className={`shrink-0 inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-extrabold ${
+                        locked ? 'bg-gray-100 text-gray-700 border-gray-200' : 'bg-blue-100 text-blue-900 border-blue-200'
+                      }`}
+                    >
                       {locked ? (
                         <>
                           <Lock className="w-3.5 h-3.5" />
@@ -938,15 +1111,8 @@ function DemoView() {
 
                   <div className="p-5 space-y-3">
                     {m.items.map((text, idx) => (
-                      <div
-                        key={idx}
-                        className="w-full text-left flex items-start gap-3 rounded-xl px-4 py-3 border bg-gray-50 border-gray-200"
-                      >
-                        <span
-                          className="mt-0.5 w-6 h-6 rounded-md border flex items-center justify-center shrink-0 bg-white border-gray-300 text-gray-400"
-                          aria-hidden
-                          title="Demo (ej klickbar)"
-                        >
+                      <div key={idx} className="w-full text-left flex items-start gap-3 rounded-xl px-4 py-3 border bg-gray-50 border-gray-200">
+                        <span className="mt-0.5 w-6 h-6 rounded-md border flex items-center justify-center shrink-0 bg-white border-gray-300 text-gray-400" aria-hidden title="Demo (ej klickbar)">
                           •
                         </span>
                         <span className="text-sm md:text-[15px] text-gray-900 leading-snug">{text}</span>
@@ -959,7 +1125,7 @@ function DemoView() {
           </div>
         </div>
 
-        {/* BJUD IN RÅDGIVARE (som du ville återha) */}
+        {/* BJUD IN RÅDGIVARE */}
         <div className="bg-gray-100 rounded-2xl shadow p-6 md:p-8 mb-8 border border-gray-300">
           <div className="flex items-center mb-4 justify-center">
             <Lock className="h-7 w-7 text-gray-700 mr-3" />
@@ -967,57 +1133,39 @@ function DemoView() {
           </div>
 
           <p className="text-center text-gray-800 mb-6 max-w-2xl mx-auto">
-            Vill du aktivera certifiering eller få export i ett specifikt format? Då kan du bjuda in din rådgivare
-            (eller be oss hjälpa dig hitta en).
+            Vill du aktivera certifiering eller få export i ett specifikt format? Då kan du bjuda in din rådgivare (eller be oss hjälpa dig hitta en).
           </p>
 
           <div className="flex flex-col md:flex-row gap-4 justify-center">
-            <button
-              onClick={() => setShowInviteForm(true)}
-              className="bg-green-600 text-white px-8 py-4 rounded-xl font-extrabold hover:bg-green-700 transition shadow-lg"
-            >
+            <button onClick={() => setShowInviteForm(true)} className="bg-green-600 text-white px-8 py-4 rounded-xl font-extrabold hover:bg-green-700 transition shadow-lg">
               Bjud in rådgivare
             </button>
-            <button
-              onClick={() => setShowHelpForm(true)}
-              className="bg-gray-700 text-white px-8 py-4 rounded-xl font-extrabold hover:bg-gray-800 transition shadow-lg"
-            >
+            <button onClick={() => setShowHelpForm(true)} className="bg-gray-700 text-white px-8 py-4 rounded-xl font-extrabold hover:bg-gray-800 transition shadow-lg">
               Jag har ingen rådgivare – hjälp mig
             </button>
           </div>
 
           <div className="text-center mt-4">
-            <button
-              onClick={() => setShowInfoModal(true)}
-              className="text-sm text-gray-600 underline"
-            >
+            <button onClick={() => setShowInfoModal(true)} className="text-sm text-gray-600 underline">
               Vad krävs för att aktivera detta?
             </button>
           </div>
         </div>
 
-        {/* FOOTER */}
-        <div className="text-center text-xs text-gray-500 mt-10 pb-10">
-          © 2026 AgriReg
-        </div>
+        <div className="text-center text-xs text-gray-500 mt-10 pb-10">© 2026 AgriReg</div>
 
-        {/* modaler (samma som tidigare, men nu nås de faktiskt) */}
+        {/* modaler */}
         {showInfoModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
               <h3 className="text-2xl font-bold mb-4">Vad krävs för att aktivera certifiering?</h3>
-              <p className="text-gray-700 mb-6">
-                KRAV, mejeri och andra certifieringar kräver rådgivarläge för:
-              </p>
+              <p className="text-gray-700 mb-6">KRAV, mejeri och andra certifieringar kräver rådgivarläge för:</p>
               <ul className="list-disc list-inside text-gray-700 mb-6 space-y-2">
                 <li>Kvalitetssäkring och spårbarhet</li>
                 <li>Full integration i tillsynsunderlag</li>
                 <li>Signering och export</li>
               </ul>
-              <button
-                onClick={() => setShowInfoModal(false)}
-                className="mt-2 w-full bg-gray-700 text-white py-3 rounded-lg font-bold hover:bg-gray-800"
-              >
+              <button onClick={() => setShowInfoModal(false)} className="mt-2 w-full bg-gray-700 text-white py-3 rounded-lg font-bold hover:bg-gray-800">
                 Stäng
               </button>
             </div>
@@ -1030,9 +1178,7 @@ function DemoView() {
               <h3 className="text-2xl font-bold mb-4">Bjud in rådgivare</h3>
               {!inviteSent ? (
                 <>
-                  <p className="text-gray-700 mb-6">
-                    Ange rådgivarens e-post – vi skickar en inbjudan.
-                  </p>
+                  <p className="text-gray-700 mb-6">Ange rådgivarens e-post – vi skickar en inbjudan.</p>
                   <input
                     type="email"
                     value={inviteEmail}
@@ -1041,10 +1187,7 @@ function DemoView() {
                     className="w-full p-3 border border-gray-300 rounded-lg mb-4"
                   />
                   <div className="flex gap-4">
-                    <button
-                      onClick={() => setInviteSent(true)}
-                      className="flex-1 bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-700"
-                    >
+                    <button onClick={() => setInviteSent(true)} className="flex-1 bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-700">
                       Skicka
                     </button>
                     <button
@@ -1061,9 +1204,7 @@ function DemoView() {
                 </>
               ) : (
                 <>
-                  <p className="text-center text-green-700 text-lg font-extrabold mb-6">
-                    Inbjudan är skickad till {inviteEmail}!
-                  </p>
+                  <p className="text-center text-green-700 text-lg font-extrabold mb-6">Inbjudan är skickad till {inviteEmail}!</p>
                   <button
                     onClick={() => {
                       setShowInviteForm(false);
@@ -1084,13 +1225,8 @@ function DemoView() {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
               <h3 className="text-2xl font-bold mb-4">Hitta rådgivare</h3>
-              <p className="text-gray-700 mb-6">
-                Vi hjälper dig hitta en AgriReg-rådgivare i ditt område.
-              </p>
-              <button
-                onClick={() => setShowHelpForm(false)}
-                className="w-full bg-gray-700 text-white py-3 rounded-lg font-bold hover:bg-gray-800"
-              >
+              <p className="text-gray-700 mb-6">Vi hjälper dig hitta en AgriReg-rådgivare i ditt område.</p>
+              <button onClick={() => setShowHelpForm(false)} className="w-full bg-gray-700 text-white py-3 rounded-lg font-bold hover:bg-gray-800">
                 Stäng
               </button>
             </div>
