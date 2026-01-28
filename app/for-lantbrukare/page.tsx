@@ -112,6 +112,7 @@ export default function LantbrukarePage() {
 }
 
 /* ------------------------- PILOT VIEW ------------------------- */
+/* (LÄMNAS OBEARBETAD – enligt din instruktion) */
 
 function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
   const modules = useMemo(() => {
@@ -226,7 +227,15 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
       const arr = checks[m.id] || [];
       const done = arr.filter(Boolean).length;
       const pct = m.items.length ? Math.round((done / m.items.length) * 100) : 0;
-      return { id: m.id, title: m.title, done, total: m.items.length, pct: clamp(pct, 0, 100), status: statusFromPercent(pct), note: (m as any).note as string | undefined };
+      return {
+        id: m.id,
+        title: m.title,
+        done,
+        total: m.items.length,
+        pct: clamp(pct, 0, 100),
+        status: statusFromPercent(pct),
+        note: (m as any).note as string | undefined
+      };
     });
   }, [checks, modules]);
 
@@ -352,7 +361,6 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
                 Generera förhandsrapport
               </button>
 
-              {/* FIX #9: Smart lösning: knappen finns men är diskret, och kan tas bort helt senare */}
               <a
                 href="mailto:pilot@agrireg.se?subject=Harparboda – hjälp att exportera rapport"
                 className={exportBtnClass}
@@ -361,8 +369,6 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
                 <Mail className="w-5 h-5" />
                 Hjälp att exportera (valfritt)
               </a>
-
-              {/* FIX #5: Ta bort tillbaka-knappen */}
             </div>
           </div>
 
@@ -556,10 +562,7 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
           </div>
         </div>
 
-        {/* FIX #4: Ta bort rutan “Du har koll-läget här...” */}
-        {/* (borta) */}
-
-        {/* FOOTER (FIX #2 + #11) */}
+        {/* FOOTER */}
         <div className="text-center text-xs text-gray-500 mt-10 pb-10">
           © 2026 AgriReg
         </div>
@@ -608,7 +611,7 @@ function ReportModal({
   const status = statusFromPercent(summary.percent);
   const topTodos = todos.slice(0, 16);
 
-  // FIX #8: close on overlay click
+  // close on overlay click
   const onOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) onClose();
   };
@@ -618,7 +621,6 @@ function ReportModal({
       className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
       onClick={onOverlayClick}
     >
-      {/* FIX #8: scroll */}
       <div className="w-full max-w-4xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[85vh] overflow-y-auto">
         <div className="p-5 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white z-10">
           <div>
@@ -703,7 +705,6 @@ function ReportModal({
               </p>
             </div>
 
-            {/* FIX #8: “Klar” stänger */}
             <button
               onClick={onClose}
               className="mt-5 w-full bg-green-600 text-white py-3 rounded-xl font-extrabold shadow hover:bg-green-700 transition"
@@ -722,31 +723,84 @@ function ReportModal({
 }
 
 /* ------------------------- DEMO VIEW ------------------------- */
+/* FIXAD: återställer “resten av sidan” + gör den lik Jockes vy men icke-funktionell. */
 
 function DemoView() {
   const exampleFarm = Array.isArray(farms) && farms.length > 0 ? farms[0] : null;
-
-  const bondStatusColor =
-    exampleFarm?.status === 'green'
-      ? 'bg-green-600 text-white'
-      : exampleFarm?.status === 'yellow'
-        ? 'bg-yellow-600 text-white'
-        : 'bg-red-600 text-white';
-
-  const statusText =
-    exampleFarm?.status === 'green'
-      ? 'Grön – allt under kontroll'
-      : exampleFarm?.status === 'yellow'
-        ? 'Gul – viss risk'
-        : 'Startläge – börja checka av!';
-
-  const unusedSupport = 18400;
 
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [showInviteForm, setShowInviteForm] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteSent, setInviteSent] = useState(false);
   const [showHelpForm, setShowHelpForm] = useState(false);
+
+  // “Ser ut som” Jockes vy men utan funktion: statiska siffror
+  const demoPct = exampleFarm?.status === 'green' ? 78 : exampleFarm?.status === 'yellow' ? 55 : 25;
+  const demoDone = Math.round((demoPct / 100) * 22);
+  const demoTotal = 22;
+  const overall = statusFromPercent(demoPct);
+
+  const ringStyle = {
+    background: `conic-gradient(${overall.ring} ${demoPct * 3.6}deg, rgba(0,0,0,0.08) 0deg)`,
+  } as React.CSSProperties;
+
+  const demoModules = useMemo(() => {
+    return [
+      {
+        id: 'djurhallning',
+        title: 'Djurhållning – exempel',
+        note: 'I demon klickar du inte – detta är en förhandsvisning.',
+        items: [
+          'Djur-ID/märkning kontrollerad',
+          'Vatten kontrollerat',
+          'Liggplatser/strö kontrollerat',
+          'Foderlager kontrollerat',
+          'Sjukbox/rutin kontrollerad',
+        ],
+      },
+      {
+        id: 'journaler',
+        title: 'Journaler & dokumentation – exempel',
+        items: [
+          'Stalljournal uppdaterad',
+          'Foder-/inköpsunderlag sparat',
+          'Kontaktlista uppdaterad',
+          'Fotodokumentation sparad',
+        ],
+      },
+      {
+        id: 'miljo',
+        title: 'Egenkontroll – miljö (bas) – exempel',
+        items: [
+          'Gödsel: rundgång gjord',
+          'Skyddszoner/vattendrag kontrollerade',
+          'Diesel/oljor kontrollerade',
+          'Avfall sorterat',
+        ],
+      },
+      {
+        id: 'sam',
+        title: 'Tillsyn & arbetsmiljö (SAM) – grund',
+        note: 'Grundkoll synlig i demo. Full export/signering kräver rådgivarläge.',
+        items: [
+          'Första hjälpen + brandsläckare kontrollerade',
+          'Maskiner: synlig risk avprickad',
+          'Gångvägar/ramper: halkrisk åtgärdad',
+        ],
+      },
+      {
+        id: 'cert',
+        title: 'Certifiering (KRAV / Mejeri / IP) – översikt',
+        note: 'Visas som “låst” i demo. Du kan bjuda in rådgivare om du vill.',
+        items: [
+          'KRAV – grundkrav översikt',
+          'Mejeri – dokumentöversikt',
+          'IP Sigill – checklista översikt',
+        ],
+        locked: true,
+      },
+    ];
+  }, []);
 
   if (!exampleFarm) {
     return (
@@ -766,63 +820,191 @@ function DemoView() {
     );
   }
 
+  // “Icke-funktionell” UI: knappar ser riktiga ut men är disabled
+  const disabledBtn =
+    "inline-flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-extrabold shadow transition opacity-60 cursor-not-allowed";
+  const disabledBtnGreen = `${disabledBtn} bg-green-600 text-white`;
+  const disabledBtnBlue = `${disabledBtn} bg-blue-600 text-white`;
+
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="bg-green-100 p-8 rounded-xl mb-12 text-center shadow-md">
-          <h1 className="text-4xl font-bold mb-4">Välkommen som lantbrukare!</h1>
-          <p className="text-xl max-w-3xl mx-auto">
-            Här ser du vy för din egen gård. Testa att ladda upp dokument och generera förhandsrapport – allt samlat på ett ställe.
-          </p>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          <div className={`p-4 text-center font-bold text-xl ${bondStatusColor}`}>
-            {statusText}
-          </div>
-
-          <div className="p-8">
-            <h2 className="text-3xl font-bold mb-8 text-center">Din gård</h2>
-
-            <h3 className="text-2xl font-bold mb-6 text-center">{exampleFarm.name}</h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-              <div className="text-center">
-                <p className="text-lg text-gray-600">Outnyttjat CAP-stöd</p>
-                <p className="text-4xl font-bold text-primary">{unusedSupport.toLocaleString()} kr</p>
+    <div className="min-h-screen bg-gray-50 py-10">
+      <div className="max-w-5xl mx-auto px-4">
+        {/* DEMO-BANNER (liknar Jockes vy) */}
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden mb-8">
+          <div className="p-6 md:p-8 bg-green-100 border-b border-green-200">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+              <div>
+                <p className="text-sm font-semibold text-green-900/80">Demo • lantbrukare</p>
+                <h1 className="text-3xl md:text-4xl font-extrabold mt-1">
+                  Så här ser lantbrukarvyn ut
+                </h1>
+                <p className="text-base md:text-lg mt-3 text-gray-800 max-w-2xl">
+                  Detta är en demo-layout. Den visar flödet och modulerna, men sparar inte och går inte att “skicka in”.
+                </p>
               </div>
-              <div className="text-center">
-                <p className="text-lg text-gray-600">Nästa deadline</p>
-                <p className="text-3xl font-bold">15 mars 2026</p>
-              </div>
-              <div className="text-center">
-                <p className="text-lg text-gray-600">Dokument klara</p>
-                <p className="text-3xl font-bold">8 / 12</p>
+
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full p-1" style={ringStyle} aria-label={`Demo progress ${demoPct}%`}>
+                  <div className="w-full h-full rounded-full bg-green-100 flex items-center justify-center">
+                    <span className="text-lg font-extrabold text-gray-900">{demoPct}%</span>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-700">Klart</p>
+                  <p className="text-lg font-bold text-gray-900">
+                    {demoDone} / {demoTotal}
+                  </p>
+                  <span className={`inline-flex mt-2 items-center gap-2 px-3 py-1 rounded-full border text-xs font-extrabold ${overall.pill}`}>
+                    {overall.label}
+                  </span>
+                </div>
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row gap-8 justify-center">
-              <button className="flex items-center justify-center gap-4 bg-blue-600 text-white px-10 py-6 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg text-xl">
-                <Upload size={32} />
-                Ladda upp dokument
-              </button>
-              <button className="flex items-center justify-center gap-4 bg-green-600 text-white px-10 py-6 rounded-xl font-bold hover:bg-green-700 transition shadow-lg text-xl">
-                <FileText size={32} />
+            {/* TOP ACTIONS (visuellt, ej funktionellt) */}
+            <div className="mt-6 flex flex-col sm:flex-row gap-3">
+              <button disabled className={disabledBtnGreen}>
+                <FileText className="w-5 h-5" />
                 Generera förhandsrapport
               </button>
+
+              <button disabled className={disabledBtnBlue}>
+                <Upload className="w-5 h-5" />
+                Ladda upp dokument/foto
+              </button>
+
+              <Link
+                href="/"
+                className="inline-flex items-center justify-center gap-3 bg-white text-gray-900 px-6 py-4 rounded-xl font-bold shadow border border-gray-200 hover:bg-gray-50 transition"
+              >
+                Tillbaka
+              </Link>
+            </div>
+          </div>
+
+          {/* “Din gård”-kort (demo) */}
+          <div className="p-6 md:p-8">
+            <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6">
+              <h2 className="text-xl md:text-2xl font-extrabold text-gray-900">Din gård (demo)</h2>
+              <p className="mt-2 text-gray-700">
+                {exampleFarm?.name || 'Exempelgård'} • Status: <span className="font-bold">{overall.label}</span>
+              </p>
+              <div className="mt-4 grid md:grid-cols-3 gap-4">
+                <div className="bg-white rounded-2xl border border-gray-200 p-4">
+                  <p className="text-sm text-gray-600">Outnyttjat CAP-stöd (exempel)</p>
+                  <p className="text-2xl font-extrabold text-primary">18 400 kr</p>
+                </div>
+                <div className="bg-white rounded-2xl border border-gray-200 p-4">
+                  <p className="text-sm text-gray-600">Nästa deadline (exempel)</p>
+                  <p className="text-2xl font-extrabold text-gray-900">15 mars 2026</p>
+                </div>
+                <div className="bg-white rounded-2xl border border-gray-200 p-4">
+                  <p className="text-sm text-gray-600">Dokument klara (exempel)</p>
+                  <p className="text-2xl font-extrabold text-gray-900">8 / 12</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* FIX #2/#11: ingen demo-footertext */}
+        {/* CHECKLISTOR (demo: synliga men icke-klickbara) */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8 mb-8 border border-gray-200">
+          <h2 className="text-2xl md:text-3xl font-extrabold text-center mb-6">Checklistor (demo)</h2>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {demoModules.map((m) => {
+              const locked = Boolean((m as any).locked);
+              return (
+                <div key={m.id} className="rounded-2xl border border-gray-200 shadow-sm bg-white overflow-hidden">
+                  <div className="p-5 border-b border-gray-100 flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-lg font-extrabold">{m.title}</h3>
+                      {m.note && <p className="text-xs text-gray-600 mt-2">{m.note}</p>}
+                    </div>
+
+                    <span className={`shrink-0 inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-extrabold ${
+                      locked ? 'bg-gray-100 text-gray-700 border-gray-200' : 'bg-blue-100 text-blue-900 border-blue-200'
+                    }`}>
+                      {locked ? (
+                        <>
+                          <Lock className="w-3.5 h-3.5" />
+                          Översikt
+                        </>
+                      ) : (
+                        'Förhandsvisning'
+                      )}
+                    </span>
+                  </div>
+
+                  <div className="p-5 space-y-3">
+                    {m.items.map((text, idx) => (
+                      <div
+                        key={idx}
+                        className="w-full text-left flex items-start gap-3 rounded-xl px-4 py-3 border bg-gray-50 border-gray-200"
+                      >
+                        <span
+                          className="mt-0.5 w-6 h-6 rounded-md border flex items-center justify-center shrink-0 bg-white border-gray-300 text-gray-400"
+                          aria-hidden
+                          title="Demo (ej klickbar)"
+                        >
+                          •
+                        </span>
+                        <span className="text-sm md:text-[15px] text-gray-900 leading-snug">{text}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* BJUD IN RÅDGIVARE (som du ville återha) */}
+        <div className="bg-gray-100 rounded-2xl shadow p-6 md:p-8 mb-8 border border-gray-300">
+          <div className="flex items-center mb-4 justify-center">
+            <Lock className="h-7 w-7 text-gray-700 mr-3" />
+            <h3 className="text-xl md:text-2xl font-extrabold text-gray-900">Certifiering & export</h3>
+          </div>
+
+          <p className="text-center text-gray-800 mb-6 max-w-2xl mx-auto">
+            Vill du aktivera certifiering eller få export i ett specifikt format? Då kan du bjuda in din rådgivare
+            (eller be oss hjälpa dig hitta en).
+          </p>
+
+          <div className="flex flex-col md:flex-row gap-4 justify-center">
+            <button
+              onClick={() => setShowInviteForm(true)}
+              className="bg-green-600 text-white px-8 py-4 rounded-xl font-extrabold hover:bg-green-700 transition shadow-lg"
+            >
+              Bjud in rådgivare
+            </button>
+            <button
+              onClick={() => setShowHelpForm(true)}
+              className="bg-gray-700 text-white px-8 py-4 rounded-xl font-extrabold hover:bg-gray-800 transition shadow-lg"
+            >
+              Jag har ingen rådgivare – hjälp mig
+            </button>
+          </div>
+
+          <div className="text-center mt-4">
+            <button
+              onClick={() => setShowInfoModal(true)}
+              className="text-sm text-gray-600 underline"
+            >
+              Vad krävs för att aktivera detta?
+            </button>
+          </div>
+        </div>
+
+        {/* FOOTER */}
         <div className="text-center text-xs text-gray-500 mt-10 pb-10">
           © 2026 AgriReg
         </div>
 
-        {/* modaler (oförändrade) */}
+        {/* modaler (samma som tidigare, men nu nås de faktiskt) */}
         {showInfoModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
               <h3 className="text-2xl font-bold mb-4">Vad krävs för att aktivera certifiering?</h3>
               <p className="text-gray-700 mb-6">
                 KRAV, mejeri och andra certifieringar kräver rådgivarläge för:
@@ -830,11 +1012,11 @@ function DemoView() {
               <ul className="list-disc list-inside text-gray-700 mb-6 space-y-2">
                 <li>Kvalitetssäkring och spårbarhet</li>
                 <li>Full integration i tillsynsunderlag</li>
-                <li>Signering och export till Länsstyrelsen</li>
+                <li>Signering och export</li>
               </ul>
               <button
                 onClick={() => setShowInfoModal(false)}
-                className="mt-6 w-full bg-gray-600 text-white py-3 rounded-lg font-medium hover:bg-gray-700"
+                className="mt-2 w-full bg-gray-700 text-white py-3 rounded-lg font-bold hover:bg-gray-800"
               >
                 Stäng
               </button>
@@ -844,12 +1026,12 @@ function DemoView() {
 
         {showInviteForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
               <h3 className="text-2xl font-bold mb-4">Bjud in rådgivare</h3>
               {!inviteSent ? (
                 <>
                   <p className="text-gray-700 mb-6">
-                    Ange rådgivarens e-post – vi skickar inbjudan.
+                    Ange rådgivarens e-post – vi skickar en inbjudan.
                   </p>
                   <input
                     type="email"
@@ -861,7 +1043,7 @@ function DemoView() {
                   <div className="flex gap-4">
                     <button
                       onClick={() => setInviteSent(true)}
-                      className="flex-1 bg-green-600 text-white py-3 rounded-lg font-medium hover:bg-green-700"
+                      className="flex-1 bg-green-600 text-white py-3 rounded-lg font-bold hover:bg-green-700"
                     >
                       Skicka
                     </button>
@@ -871,7 +1053,7 @@ function DemoView() {
                         setInviteSent(false);
                         setInviteEmail('');
                       }}
-                      className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg font-medium"
+                      className="flex-1 bg-gray-200 text-gray-800 py-3 rounded-lg font-bold hover:bg-gray-300"
                     >
                       Avbryt
                     </button>
@@ -879,8 +1061,8 @@ function DemoView() {
                 </>
               ) : (
                 <>
-                  <p className="text-center text-green-600 text-xl font-medium mb-6">
-                    Skickat till {inviteEmail}!
+                  <p className="text-center text-green-700 text-lg font-extrabold mb-6">
+                    Inbjudan är skickad till {inviteEmail}!
                   </p>
                   <button
                     onClick={() => {
@@ -888,7 +1070,7 @@ function DemoView() {
                       setInviteSent(false);
                       setInviteEmail('');
                     }}
-                    className="w-full bg-gray-600 text-white py-3 rounded-lg font-medium hover:bg-gray-700"
+                    className="w-full bg-gray-700 text-white py-3 rounded-lg font-bold hover:bg-gray-800"
                   >
                     Stäng
                   </button>
@@ -900,14 +1082,14 @@ function DemoView() {
 
         {showHelpForm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
               <h3 className="text-2xl font-bold mb-4">Hitta rådgivare</h3>
               <p className="text-gray-700 mb-6">
                 Vi hjälper dig hitta en AgriReg-rådgivare i ditt område.
               </p>
               <button
                 onClick={() => setShowHelpForm(false)}
-                className="w-full bg-gray-600 text-white py-3 rounded-lg font-medium hover:bg-gray-700"
+                className="w-full bg-gray-700 text-white py-3 rounded-lg font-bold hover:bg-gray-800"
               >
                 Stäng
               </button>
