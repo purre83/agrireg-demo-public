@@ -121,17 +121,7 @@ function buildReportHtml(params: {
   todos: { moduleTitle: string; text: string }[];
   uploads: UploadItem[];
 }) {
-  const {
-    farmName,
-    farmType,
-    generatedAt,
-    percent,
-    done,
-    total,
-    modules,
-    todos,
-    uploads,
-  } = params;
+  const { farmName, farmType, generatedAt, percent, done, total, modules, todos, uploads } = params;
 
   const topTodos = todos.slice(0, 24);
   const fileNames = uploads.slice(0, 20).map((u) => u.name);
@@ -154,9 +144,7 @@ function buildReportHtml(params: {
         ${topTodos
           .map(
             (t) =>
-              `<li style="margin:6px 0"><strong>${escapeHtml(t.moduleTitle)}:</strong> ${escapeHtml(
-                t.text
-              )}</li>`
+              `<li style="margin:6px 0"><strong>${escapeHtml(t.moduleTitle)}:</strong> ${escapeHtml(t.text)}</li>`
           )
           .join('')}
       </ol>`;
@@ -261,8 +249,10 @@ export default function LantbrukarePage() {
     []
   );
 
-  if (pilotId === 'harparboda' && pilotFarm) {
-    return <PilotView pilotFarm={pilotFarm} />;
+  const isPilotView = pilotId === 'harparboda' && Boolean(pilotFarm);
+
+  if (isPilotView && pilotFarm) {
+    return <PilotView pilotFarm={pilotFarm} isPilotView />;
   }
 
   return <DemoView />;
@@ -270,7 +260,7 @@ export default function LantbrukarePage() {
 
 /* ------------------------- PILOT VIEW ------------------------- */
 
-function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
+function PilotView({ pilotFarm, isPilotView }: { pilotFarm: Farm; isPilotView: boolean }) {
   const modules = useMemo(() => {
     // Anpassat för: dikor & ungnöt
     return [
@@ -505,6 +495,8 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
               <div>
                 <p className="text-sm font-semibold text-green-900/80">Harparboda Gård • dikor & ungnöt</p>
                 <h1 className="text-3xl md:text-4xl font-extrabold mt-1">Hej Jocke – din vy för Harparboda Gård</h1>
+
+                {/* FIX #2: ingen demo-text i pilot-header */}
                 <p className="text-base md:text-lg mt-3 text-gray-800 max-w-2xl">
                   Bocka av checklistor, ladda upp underlag och skapa din förhandsrapport. Allt sparas lokalt i din webbläsare.
                 </p>
@@ -547,7 +539,11 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
                 Hjälp att exportera (valfritt)
               </a>
 
-              {/* FIX #4: ingen “boka pilot”-knapp här (finns inte längre) */}
+              {/* FIX #1: "Boka pilot"-knapp ska inte finnas i pilot-vyn */}
+              {/* Om den fanns tidigare: rendera den aldrig när isPilotView === true */}
+              {!isPilotView ? (
+                <></>
+              ) : null}
             </div>
           </div>
 
@@ -662,7 +658,9 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
                         <p className="text-xs font-semibold text-gray-900 truncate" title={u.name}>
                           {u.name}
                         </p>
-                        <p className="text-[10px] text-gray-500 mt-1">{u.dataUrl?.startsWith('data:image') ? 'Klicka på bilden för att förstora' : 'Sparas lokalt i din webbläsare'}</p>
+                        <p className="text-[10px] text-gray-500 mt-1">
+                          {u.dataUrl?.startsWith('data:image') ? 'Klicka på bilden för att förstora' : 'Sparas lokalt i din webbläsare'}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -684,7 +682,7 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
 
               // FIX #3: 0% ska se röd ut i checklist-kortet (men toppen är lugn)
               const isZero = modPct === 0;
-              const pillClass = isZero ? 'bg-red-100 text-red-800 border-red-200' : (meta?.status?.pill ?? statusFromPercent(0).pill);
+              const pillClass = isZero ? 'bg-red-100 text-red-800 border-red-200' : meta?.status?.pill ?? statusFromPercent(0).pill;
               const cardBorder = isZero ? 'border-red-200' : 'border-gray-200';
 
               return (
@@ -730,7 +728,7 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
           </div>
         </div>
 
-        {/* FOOTER (ingen demo-text) */}
+        {/* FIX #3: ingen demo-footer i pilot-vyn */}
         <div className="text-center text-xs text-gray-500 mt-10 pb-10">© 2026 AgriReg</div>
 
         {/* REPORT MODAL */}
@@ -757,9 +755,7 @@ function PilotView({ pilotFarm }: { pilotFarm: Farm }) {
         )}
 
         {/* IMAGE PREVIEW MODAL */}
-        {previewUpload && (
-          <ImagePreviewModal upload={previewUpload} onClose={() => setPreviewUpload(null)} />
-        )}
+        {previewUpload && <ImagePreviewModal upload={previewUpload} onClose={() => setPreviewUpload(null)} />}
       </div>
     </div>
   );
@@ -883,9 +879,7 @@ function ReportModal({
               Ladda ner som PDF
             </button>
 
-            <p className="mt-2 text-[11px] text-gray-600 text-center">
-              (Öppnar utskriftsrutan – välj “Spara som PDF”.)
-            </p>
+            <p className="mt-2 text-[11px] text-gray-600 text-center">(Öppnar utskriftsrutan – välj “Spara som PDF”.)</p>
           </div>
 
           {/* RIGHT */}
