@@ -30,7 +30,7 @@ const STORAGE_KEY = 'agrireg_pilot_harparboda_v4';
 // OBS: du gav en annan URL tidigare i texten (lång “sam-ansokan...”).
 // Den här är den som du klistrade in i din page.tsx-exempelversion.
 const JBV_VIKTIGA_DATUM_URL =
-  'https://jordbruksverket.se/stod/jordbruk-tradgard-och-rennaring/ansok-om-stod-i-sam-internet/viktiga-datum';
+  'https://jordbruksverket.se/stod/jordbruk-tradgard-och-rennaring/sam-ansokan-och-allmant-om-jordbrukarstoden/viktiga-datum-for-jordbrukarstoden';
 
 function safeLoad(): PilotStorage {
   if (typeof window === 'undefined') return { checks: {}, uploads: [] };
