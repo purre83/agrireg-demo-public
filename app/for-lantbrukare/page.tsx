@@ -1,3 +1,7 @@
+// app/for-lantbrukare/page.tsx
+// ============================
+// DEL 1/2  (DEL 2 kommer när du skriver: nästa)
+
 'use client';
 
 import Link from 'next/link';
@@ -22,7 +26,11 @@ type PilotStorage = {
 };
 
 const STORAGE_KEY = 'agrireg_pilot_harparboda_v4';
-const JBV_VIKTIGA_DATUM_URL = 'https://jordbruksverket.se/stod/jordbruk-tradgard-och-rennaring/ansok-om-stod-i-sam-internet/viktiga-datum';
+
+// OBS: du gav en annan URL tidigare i texten (lång “sam-ansokan...”).
+// Den här är den som du klistrade in i din page.tsx-exempelversion.
+const JBV_VIKTIGA_DATUM_URL =
+  'https://jordbruksverket.se/stod/jordbruk-tradgard-och-rennaring/ansok-om-stod-i-sam-internet/viktiga-datum';
 
 function safeLoad(): PilotStorage {
   if (typeof window === 'undefined') return { checks: {}, uploads: [] };
@@ -83,7 +91,6 @@ function statusFromPercent(pct: number) {
 
 function formatIsoToSvLong(iso?: string) {
   if (!iso) return '';
-  // Förväntar YYYY-MM-DD
   const d = new Date(`${iso}T00:00:00`);
   if (Number.isNaN(d.getTime())) return iso;
   return d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -521,7 +528,9 @@ function PilotView({ pilotFarm, isPilotView }: { pilotFarm: Farm; isPilotView: b
                   <p className="text-lg font-bold text-gray-900">
                     {totals.done} / {totals.total}
                   </p>
-                  <span className={`inline-flex mt-2 items-center gap-2 px-3 py-1 rounded-full border text-xs font-extrabold ${overall.pill}`}>
+                  <span
+                    className={`inline-flex mt-2 items-center gap-2 px-3 py-1 rounded-full border text-xs font-extrabold ${overall.pill}`}
+                  >
                     {overall.label}
                   </span>
                 </div>
@@ -558,7 +567,6 @@ function PilotView({ pilotFarm, isPilotView }: { pilotFarm: Farm; isPilotView: b
                 Vad ska göras – och när
               </h2>
 
-              {/* NYTT: Jordbruksverket-länk */}
               <a
                 href={JBV_VIKTIGA_DATUM_URL}
                 target="_blank"
@@ -578,7 +586,6 @@ function PilotView({ pilotFarm, isPilotView }: { pilotFarm: Farm; isPilotView: b
                   {pilotFarm?.nextAction || 'Fortsätt bocka av checklistan – du är på rätt väg.'}
                 </p>
 
-                {/* NYTT: “nästa deadline” med korrekt datum om det finns */}
                 {nextDeadlineLabel ? (
                   <p className="mt-3 text-sm text-gray-700">
                     <span className="font-bold">Viktig deadline:</span> {nextDeadlineLabel}
@@ -715,7 +722,9 @@ function PilotView({ pilotFarm, isPilotView }: { pilotFarm: Farm; isPilotView: b
               const modNote = meta?.note;
 
               const isZero = modPct === 0;
-              const pillClass = isZero ? 'bg-red-100 text-red-800 border-red-200' : meta?.status?.pill ?? statusFromPercent(0).pill;
+              const pillClass = isZero
+                ? 'bg-red-100 text-red-800 border-red-200'
+                : meta?.status?.pill ?? statusFromPercent(0).pill;
               const cardBorder = isZero ? 'border-red-200' : 'border-gray-200';
 
               return (
@@ -792,6 +801,10 @@ function PilotView({ pilotFarm, isPilotView }: { pilotFarm: Farm; isPilotView: b
     </div>
   );
 }
+
+// app/for-lantbrukare/page.tsx
+// ============================
+// DEL 2/2  (fortsättning – klistra in DIREKT efter del 1)
 
 function ImagePreviewModal({ upload, onClose }: { upload: UploadItem; onClose: () => void }) {
   const onOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -980,7 +993,13 @@ function DemoView() {
         id: 'djurhallning',
         title: 'Djurhållning – exempel',
         note: 'I demon klickar du inte – detta är en förhandsvisning.',
-        items: ['Djur-ID/märkning kontrollerad', 'Vatten kontrollerat', 'Liggplatser/strö kontrollerat', 'Foderlager kontrollerat', 'Sjukbox/rutin kontrollerad'],
+        items: [
+          'Djur-ID/märkning kontrollerad',
+          'Vatten kontrollerat',
+          'Liggplatser/strö kontrollerat',
+          'Foderlager kontrollerat',
+          'Sjukbox/rutin kontrollerad',
+        ],
       },
       {
         id: 'journaler',
@@ -1026,7 +1045,8 @@ function DemoView() {
     );
   }
 
-  const disabledBtn = 'inline-flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-extrabold shadow transition opacity-60 cursor-not-allowed';
+  const disabledBtn =
+    'inline-flex items-center justify-center gap-3 px-6 py-4 rounded-xl font-extrabold shadow transition opacity-60 cursor-not-allowed';
   const disabledBtnGreen = `${disabledBtn} bg-green-600 text-white`;
   const disabledBtnBlue = `${disabledBtn} bg-blue-600 text-white`;
 
