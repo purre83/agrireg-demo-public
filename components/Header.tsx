@@ -2,13 +2,21 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
+import React, { useEffect, useState } from 'react';
 
 export default function Header() {
-  const pathname = usePathname();
-  const sp = useSearchParams();
+  const [isPilotView, setIsPilotView] = useState(false);
 
-  const isPilotView = pathname === '/for-lantbrukare' && sp.get('pilot') === 'harparboda';
+  useEffect(() => {
+    try {
+      const { pathname, search } = window.location;
+      const sp = new URLSearchParams(search);
+      const pilot = sp.get('pilot');
+      setIsPilotView(pathname === '/for-lantbrukare' && pilot === 'harparboda');
+    } catch {
+      setIsPilotView(false);
+    }
+  }, []);
 
   return (
     <>
@@ -50,7 +58,7 @@ export default function Header() {
                 Demo-data – ej riktiga gårdar
               </span>
             ) : (
-              // tomt för att behålla spacing i headern
+              // behåll spacing så headern inte hoppar
               <span aria-hidden="true" className="block h-6" />
             )}
           </div>
@@ -61,6 +69,7 @@ export default function Header() {
               <a
                 href="mailto:pilot@agrireg.se"
                 className="
+                  shrink-0
                   bg-white text-green-800
                   font-semibold
                   px-3 py-1
@@ -74,7 +83,6 @@ export default function Header() {
                 Boka pilot
               </a>
             ) : (
-              // placeholder för att inte layout ska hoppa
               <span aria-hidden="true" className="inline-block w-[78px]" />
             )}
           </div>
