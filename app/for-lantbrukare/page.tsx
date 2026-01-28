@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { farms } from '@/src/data/dummyData';
-import { Upload, FileText, Lock, CheckCircle2, X, Mail, Camera } from 'lucide-react';
+import { Upload, FileText, Lock, CheckCircle2, X, Mail, Camera, ExternalLink } from 'lucide-react';
 import React, { useEffect, useMemo, useState } from 'react';
 import type { ChangeEvent, DragEvent } from 'react';
 
@@ -22,6 +22,7 @@ type PilotStorage = {
 };
 
 const STORAGE_KEY = 'agrireg_pilot_harparboda_v4';
+const JBV_VIKTIGA_DATUM_URL = 'https://jordbruksverket.se/stod/jordbruk-tradgard-och-rennaring/ansok-om-stod-i-sam-internet/viktiga-datum';
 
 function safeLoad(): PilotStorage {
   if (typeof window === 'undefined') return { checks: {}, uploads: [] };
@@ -80,6 +81,14 @@ function statusFromPercent(pct: number) {
   };
 }
 
+function formatIsoToSvLong(iso?: string) {
+  if (!iso) return '';
+  // Förväntar YYYY-MM-DD
+  const d = new Date(`${iso}T00:00:00`);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString('sv-SE', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
 /* ------------------------- PDF (via utskrift) ------------------------- */
 
 function escapeHtml(str: string) {
@@ -99,7 +108,6 @@ function openPrintWindow(html: string, title = 'AgriReg – Förhandsrapport') {
   w.document.close();
   w.document.title = title;
 
-  // Vänta lite tills DOM finns, sedan trigga print (användaren väljer "Spara som PDF")
   setTimeout(() => {
     try {
       w.focus();
@@ -328,7 +336,7 @@ function PilotView({ pilotFarm, isPilotView }: { pilotFarm: Farm; isPilotView: b
   const [uploads, setUploads] = useState<UploadItem[]>([]);
   const [showReport, setShowReport] = useState(false);
 
-  // FIX #6: bildförstoring
+  // bildförstoring
   const [previewUpload, setPreviewUpload] = useState<UploadItem | null>(null);
 
   // init from localStorage
@@ -461,7 +469,6 @@ function PilotView({ pilotFarm, isPilotView }: { pilotFarm: Farm; isPilotView: b
   const exportBtnClass =
     'inline-flex items-center justify-center gap-3 bg-green-200 text-green-900 px-6 py-4 rounded-xl font-extrabold shadow border border-green-300 hover:bg-green-300 transition';
 
-  // FIX #1: rapport-preview + "ladda ner PDF" (via utskrift)
   const downloadReportPdf = () => {
     const now = new Date();
     const generatedAt = now.toLocaleString('sv-SE', { hour12: false });
@@ -485,6 +492,8 @@ function PilotView({ pilotFarm, isPilotView }: { pilotFarm: Farm; isPilotView: b
     openPrintWindow(html);
   };
 
+  const nextDeadlineLabel = pilotFarm?.nextDeadline ? formatIsoToSvLong(pilotFarm.nextDeadline) : '';
+
   return (
     <div className="min-h-screen bg-gray-50 py-10">
       <div className="max-w-5xl mx-auto px-4">
@@ -496,7 +505,6 @@ function PilotView({ pilotFarm, isPilotView }: { pilotFarm: Farm; isPilotView: b
                 <p className="text-sm font-semibold text-green-900/80">Harparboda Gård • dikor & ungnöt</p>
                 <h1 className="text-3xl md:text-4xl font-extrabold mt-1">Hej Jocke – din vy för Harparboda Gård</h1>
 
-                {/* FIX #2: ingen demo-text i pilot-header */}
                 <p className="text-base md:text-lg mt-3 text-gray-800 max-w-2xl">
                   Bocka av checklistor, ladda upp underlag och skapa din förhandsrapport. Allt sparas lokalt i din webbläsare.
                 </p>
@@ -539,23 +547,45 @@ function PilotView({ pilotFarm, isPilotView }: { pilotFarm: Farm; isPilotView: b
                 Hjälp att exportera (valfritt)
               </a>
 
-              {/* FIX #1: "Boka pilot"-knapp ska inte finnas i pilot-vyn */}
-              {/* Om den fanns tidigare: rendera den aldrig när isPilotView === true */}
-              {!isPilotView ? (
-                <></>
-              ) : null}
+              {!isPilotView ? <></> : null}
             </div>
           </div>
 
           {/* VAD SKA GÖRAS – OCH NÄR */}
           <div className="p-6 md:p-8">
-            <h2 className="text-2xl md:text-3xl font-extrabold text-primary mb-6 text-center">Vad ska göras – och när</h2>
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3 mb-6">
+              <h2 className="text-2xl md:text-3xl font-extrabold text-primary text-center md:text-left">
+                Vad ska göras – och när
+              </h2>
+
+              {/* NYTT: Jordbruksverket-länk */}
+              <a
+                href={JBV_VIKTIGA_DATUM_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-sm font-bold text-gray-700 hover:text-gray-900 underline justify-center md:justify-start"
+                title="Öppnar Jordbruksverket – viktiga datum"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Jordbruksverket: Viktiga datum
+              </a>
+            </div>
 
             <div className="grid md:grid-cols-3 gap-6">
               <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6">
                 <h3 className="text-lg font-extrabold mb-2">Nästa åtgärd</h3>
-                <p className="text-xl font-semibold text-gray-900">{pilotFarm?.nextAction || 'Fortsätt bocka av checklistan – du är på rätt väg.'}</p>
-                <p className="mt-3 text-sm text-gray-700">Tips: välj 2 snabba punkter och gör dem direkt.</p>
+                <p className="text-xl font-semibold text-gray-900">
+                  {pilotFarm?.nextAction || 'Fortsätt bocka av checklistan – du är på rätt väg.'}
+                </p>
+
+                {/* NYTT: “nästa deadline” med korrekt datum om det finns */}
+                {nextDeadlineLabel ? (
+                  <p className="mt-3 text-sm text-gray-700">
+                    <span className="font-bold">Viktig deadline:</span> {nextDeadlineLabel}
+                  </p>
+                ) : (
+                  <p className="mt-3 text-sm text-gray-700">Tips: välj 2 snabba punkter och gör dem direkt.</p>
+                )}
               </div>
 
               <div className="bg-gray-50 border border-gray-200 rounded-2xl p-6">
@@ -609,7 +639,11 @@ function PilotView({ pilotFarm, isPilotView }: { pilotFarm: Farm; isPilotView: b
             </div>
           </div>
 
-          <div onDragOver={(e) => e.preventDefault()} onDrop={onDrop} className="mt-6 rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 p-6 md:p-10 text-center">
+          <div
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={onDrop}
+            className="mt-6 rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 p-6 md:p-10 text-center"
+          >
             <div className="inline-flex items-center gap-3 text-gray-700 font-semibold">
               <Camera className="w-5 h-5" />
               Släpp filer här (foton/PDF)
@@ -680,7 +714,6 @@ function PilotView({ pilotFarm, isPilotView }: { pilotFarm: Farm; isPilotView: b
               const modPct = meta?.pct ?? 0;
               const modNote = meta?.note;
 
-              // FIX #3: 0% ska se röd ut i checklist-kortet (men toppen är lugn)
               const isZero = modPct === 0;
               const pillClass = isZero ? 'bg-red-100 text-red-800 border-red-200' : meta?.status?.pill ?? statusFromPercent(0).pill;
               const cardBorder = isZero ? 'border-red-200' : 'border-gray-200';
@@ -728,7 +761,6 @@ function PilotView({ pilotFarm, isPilotView }: { pilotFarm: Farm; isPilotView: b
           </div>
         </div>
 
-        {/* FIX #3: ingen demo-footer i pilot-vyn */}
         <div className="text-center text-xs text-gray-500 mt-10 pb-10">© 2026 AgriReg</div>
 
         {/* REPORT MODAL */}
@@ -833,7 +865,6 @@ function ReportModal({
           <div className="rounded-2xl border border-gray-200 bg-gray-50 p-5">
             <div className="flex items-center justify-between">
               <h4 className="font-extrabold text-gray-900">Sammanfattning</h4>
-              {/* FIX #5: ta bort “Startläge...” bredvid Sammanfattning (ingen status-pill här) */}
             </div>
 
             <div className="mt-4 space-y-2 text-sm text-gray-800">
@@ -870,7 +901,6 @@ function ReportModal({
               </div>
             )}
 
-            {/* FIX #1: PDF */}
             <button
               onClick={onDownloadPdf}
               className="mt-5 w-full bg-white border border-gray-200 py-3 rounded-xl font-extrabold shadow hover:bg-gray-50 transition inline-flex items-center justify-center gap-2"
@@ -911,7 +941,6 @@ function ReportModal({
               </p>
             </div>
 
-            {/* “Klar” stänger */}
             <button onClick={onClose} className="mt-5 w-full bg-green-600 text-white py-3 rounded-xl font-extrabold shadow hover:bg-green-700 transition">
               Klar
             </button>
@@ -925,7 +954,7 @@ function ReportModal({
 }
 
 /* ------------------------- DEMO VIEW ------------------------- */
-/* Lämnas som i din senaste version (demo ska vara “lik” men ej funktionell). */
+/* Demo lämnas i stort sett som innan. */
 
 function DemoView() {
   const exampleFarm = Array.isArray(farms) && farms.length > 0 ? farms[0] : null;
@@ -1230,3 +1259,4 @@ function DemoView() {
     </div>
   );
 }
+
