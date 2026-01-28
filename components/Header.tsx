@@ -1,15 +1,21 @@
-"use client";
+'use client';
 
-import Image from "next/image";
-import Link from "next/link";
+import Image from 'next/image';
+import Link from 'next/link';
+import { usePathname, useSearchParams } from 'next/navigation';
 
 export default function Header() {
+  const pathname = usePathname();
+  const sp = useSearchParams();
+
+  const isPilotView = pathname === '/for-lantbrukare' && sp.get('pilot') === 'harparboda';
+
   return (
     <>
       {/* iOS safe-area overlay – gör remsan högst upp grön */}
       <div
         className="fixed inset-x-0 top-0 z-50 bg-green-800 pointer-events-none"
-        style={{ height: "env(safe-area-inset-top)" }}
+        style={{ height: 'env(safe-area-inset-top)' }}
         aria-hidden="true"
       />
 
@@ -23,45 +29,55 @@ export default function Header() {
               alt="AgriReg"
               width={256}
               height={256}
-              // Loggan är alltid 32 (8rem) hög – oberoende av bandet
               className="h-32 w-auto md:h-32 object-contain"
               priority
             />
           </Link>
 
-          {/* Mitten: badge */}
+          {/* Mitten: badge (GÖMS i pilot) */}
           <div className="flex-1 flex justify-center">
-            <span
-              className="
-                inline-block
-                bg-green-600 text-white
-                text-[10px] md:text-xs
-                px-3 py-1
-                rounded-full
-                whitespace-nowrap
-              "
-            >
-              Demo-data – ej riktiga gårdar
-            </span>
+            {!isPilotView ? (
+              <span
+                className="
+                  inline-block
+                  bg-green-600 text-white
+                  text-[10px] md:text-xs
+                  px-3 py-1
+                  rounded-full
+                  whitespace-nowrap
+                "
+              >
+                Demo-data – ej riktiga gårdar
+              </span>
+            ) : (
+              // tomt för att behålla spacing i headern
+              <span aria-hidden="true" className="block h-6" />
+            )}
           </div>
 
-          {/* Höger: CTA – Boka pilot */}
-          <a
-            href="mailto:pilot@agrireg.se"
-            className="
-              shrink-0
-              bg-white text-green-800
-              font-semibold
-              px-3 py-1
-              rounded-lg shadow
-              hover:bg-green-100
-              transition
-              text-[10px] md:text-xs
-              whitespace-nowrap
-            "
-          >
-            Boka pilot
-          </a>
+          {/* Höger: CTA – Boka pilot (GÖMS i pilot) */}
+          <div className="shrink-0">
+            {!isPilotView ? (
+              <a
+                href="mailto:pilot@agrireg.se"
+                className="
+                  bg-white text-green-800
+                  font-semibold
+                  px-3 py-1
+                  rounded-lg shadow
+                  hover:bg-green-100
+                  transition
+                  text-[10px] md:text-xs
+                  whitespace-nowrap
+                "
+              >
+                Boka pilot
+              </a>
+            ) : (
+              // placeholder för att inte layout ska hoppa
+              <span aria-hidden="true" className="inline-block w-[78px]" />
+            )}
+          </div>
         </div>
       </header>
     </>
